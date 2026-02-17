@@ -4314,7 +4314,7 @@ void create_screen_page_theme() {
                             add_style_style_text_primary(obj);
                             lv_obj_set_style_text_font(obj, &ui_font_jet_reg_18, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_text_line_space(obj, 7, LV_PART_MAIN | LV_STATE_DEFAULT);
-                            lv_label_set_text(obj, "To configure custom theme:\n- Connect Project Aura to WI-FI first\n- Open http://aura.local/theme in browser \nor scan QR code.\n- Save by pressing Back");
+                            lv_label_set_text(obj, "To configure custom theme:\n- Connect Project Aura to WI-FI first\n- Open http://aura.local/theme in \nbrowser or scan QR code.\n- Save by pressing Back");
                         }
                         {
                             // qrcode_theme_custom
