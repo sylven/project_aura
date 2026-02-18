@@ -888,7 +888,7 @@ void create_screen_page_main_pro() {
                             // label_pressure_value_1
                             lv_obj_t *obj = lv_label_create(parent_obj);
                             objects.label_pressure_value_1 = obj;
-                            lv_obj_set_pos(obj, 3, 46);
+                            lv_obj_set_pos(obj, 3, 45);
                             lv_obj_set_size(obj, 122, LV_SIZE_CONTENT);
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);
@@ -900,7 +900,7 @@ void create_screen_page_main_pro() {
                             // label_pressure_unit_1
                             lv_obj_t *obj = lv_label_create(parent_obj);
                             objects.label_pressure_unit_1 = obj;
-                            lv_obj_set_pos(obj, 129, 63);
+                            lv_obj_set_pos(obj, 129, 62);
                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);
@@ -1144,7 +1144,7 @@ void create_screen_page_main_pro() {
                             // label_pm05_unit
                             lv_obj_t *obj = lv_label_create(parent_obj);
                             objects.label_pm05_unit = obj;
-                            lv_obj_set_pos(obj, 48, 87);
+                            lv_obj_set_pos(obj, 48, 90);
                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);
@@ -1155,7 +1155,7 @@ void create_screen_page_main_pro() {
                             // label_pm05_value
                             lv_obj_t *obj = lv_label_create(parent_obj);
                             objects.label_pm05_value = obj;
-                            lv_obj_set_pos(obj, 8, 44);
+                            lv_obj_set_pos(obj, 8, 43);
                             lv_obj_set_size(obj, 120, LV_SIZE_CONTENT);
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);
@@ -1597,7 +1597,7 @@ void create_screen_page_main_pro() {
                             // label_pm25_unit_1
                             lv_obj_t *obj = lv_label_create(parent_obj);
                             objects.label_pm25_unit_1 = obj;
-                            lv_obj_set_pos(obj, 48, 87);
+                            lv_obj_set_pos(obj, 48, 90);
                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);
@@ -1608,7 +1608,7 @@ void create_screen_page_main_pro() {
                             // label_pm25_value_1
                             lv_obj_t *obj = lv_label_create(parent_obj);
                             objects.label_pm25_value_1 = obj;
-                            lv_obj_set_pos(obj, 8, 44);
+                            lv_obj_set_pos(obj, 8, 43);
                             lv_obj_set_size(obj, 120, LV_SIZE_CONTENT);
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);
@@ -1891,7 +1891,7 @@ void create_screen_page_main_pro() {
                             // label_pm10_value_pro
                             lv_obj_t *obj = lv_label_create(parent_obj);
                             objects.label_pm10_value_pro = obj;
-                            lv_obj_set_pos(obj, 8, 44);
+                            lv_obj_set_pos(obj, 8, 43);
                             lv_obj_set_size(obj, 120, LV_SIZE_CONTENT);
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);
@@ -1932,7 +1932,7 @@ void create_screen_page_main_pro() {
                             // label_pm1_title
                             lv_obj_t *obj = lv_label_create(parent_obj);
                             objects.label_pm1_title = obj;
-                            lv_obj_set_pos(obj, 28, 84);
+                            lv_obj_set_pos(obj, 28, 87);
                             lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);
@@ -1943,7 +1943,7 @@ void create_screen_page_main_pro() {
                             // label_pm1_value
                             lv_obj_t *obj = lv_label_create(parent_obj);
                             objects.label_pm1_value = obj;
-                            lv_obj_set_pos(obj, 72, 84);
+                            lv_obj_set_pos(obj, 72, 87);
                             lv_obj_set_size(obj, 33, LV_SIZE_CONTENT);
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);
@@ -1955,7 +1955,7 @@ void create_screen_page_main_pro() {
                             // dot_pm1
                             lv_obj_t *obj = lv_obj_create(parent_obj);
                             objects.dot_pm1 = obj;
-                            lv_obj_set_pos(obj, 111, 88);
+                            lv_obj_set_pos(obj, 111, 91);
                             lv_obj_set_size(obj, 12, 12);
                             lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
                             lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -9311,7 +9311,7 @@ void create_screen_page_sensors_info() {
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);
                             lv_obj_set_style_text_font(obj, &ui_font_jet_reg_18, LV_PART_MAIN | LV_STATE_DEFAULT);
-                            lv_label_set_text(obj, "PM0.5 are ultrafine particles below 0.5 microns detected by\nlaser scattering (≥0.3 µm). Small enough to penetrate deep\ninto lungs and enter the bloodstream. Main indoor sources:\ncombustion, cooking, 3D printing, candles. No official limits\nexist for this fraction. Thresholds based on WHO 2021 UFP\nguidance adapted for laser particle counter range.");
+                            lv_label_set_text(obj, "PM0.5 counts ultrafine particles (0.3-0.5 um) that bypass\nlung defenses and enter the bloodstream. Measured by laser\nscattering in #/cm3. Main sources: combustion, cooking, 3D\nprinting, candles, vaping. Sensor range: 0-3000 #/cm3.\nThresholds account for sensor accuracy (+/-100 #/cm3) and\ntypical urban indoor background levels.");
                         }
                         {
                             // label_pm05_excellent
@@ -9322,7 +9322,7 @@ void create_screen_page_sensors_info() {
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);
                             lv_obj_set_style_text_font(obj, &ui_font_jet_reg_18, LV_PART_MAIN | LV_STATE_DEFAULT);
-                            lv_label_set_text(obj, "Excellent: ≤1,000 #/cm³\nVery clean air, effective filtration or low activity");
+                            lv_label_set_text(obj, "Excellent: ≤250 #/cm³\nClean air, ideal for sleep and prolonged occupancy");
                         }
                         {
                             // label_pm05_acceptable
@@ -9333,7 +9333,7 @@ void create_screen_page_sensors_info() {
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);
                             lv_obj_set_style_text_font(obj, &ui_font_jet_reg_18, LV_PART_MAIN | LV_STATE_DEFAULT);
-                            lv_label_set_text(obj, "Acceptable: >1,000-10,000 #/cm³\nNormal indoor background, no action needed");
+                            lv_label_set_text(obj, "Acceptable: >250-600 #/cm³\nNormal indoor activity, no action needed");
                         }
                         {
                             // label_pm05_uncomfortable
@@ -9344,7 +9344,7 @@ void create_screen_page_sensors_info() {
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);
                             lv_obj_set_style_text_font(obj, &ui_font_jet_reg_18, LV_PART_MAIN | LV_STATE_DEFAULT);
-                            lv_label_set_text(obj, "Uncomfortable: >10,000-20,000 #/cm³\nElevated count, consider ventilation");
+                            lv_label_set_text(obj, "Uncomfortable: >600-1200 #/cm³\nSource detected, ventilate or run air purifier");
                         }
                         {
                             // label_pm05_poor
@@ -9355,7 +9355,7 @@ void create_screen_page_sensors_info() {
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);
                             lv_obj_set_style_text_font(obj, &ui_font_jet_reg_18, LV_PART_MAIN | LV_STATE_DEFAULT);
-                            lv_label_set_text(obj, "Poor: >20,000 #/cm³\nHigh particle activity, identify and remove source");
+                            lv_label_set_text(obj, "Poor: >1200 #/cm³\nHigh count, identify source and improve airflow");
                         }
                     }
                 }

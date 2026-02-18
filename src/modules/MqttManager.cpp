@@ -437,10 +437,10 @@ void MqttManager::publishDiscovery() {
                            "{{ value_json.hcho }}", "mdi:flask-outline");
     publishDiscoverySensor("pm1", "PM1.0", "\\u00b5g/m\\u00b3",
                            "", "measurement", "{{ value_json.pm1 }}", "mdi:molecule");
+    publishDiscoverySensor("pm05", "PM0.5", "#/cm\\u00b3",
+                           "", "measurement", "{{ value_json.pm05 }}", "mdi:dots-hexagon");
     publishDiscoverySensor("pm25", "PM2.5", "\\u00b5g/m\\u00b3",
                            "pm25", "measurement", "{{ value_json.pm25 }}", "");
-    publishDiscoverySensor("pm4", "PM4.0", "\\u00b5g/m\\u00b3",
-                           "", "measurement", "{{ value_json.pm4 }}", "mdi:molecule");
     publishDiscoverySensor("pm10", "PM10", "\\u00b5g/m\\u00b3",
                            "pm10", "measurement", "{{ value_json.pm10 }}", "");
     publishDiscoverySensor("pressure", "Pressure", "hPa",
@@ -529,9 +529,9 @@ void MqttManager::publishState(const SensorData &data, bool night_mode, bool ale
     add_int("voc_index", data.voc_valid, data.voc_index);
     add_int("nox_index", data.nox_valid, data.nox_index);
     add_float("hcho", data.hcho_valid, data.hcho, 1);
+    add_float("pm05", data.pm05_valid, data.pm05, 1);
     add_float("pm1", data.pm_valid, data.pm1, 1);
     add_float("pm25", data.pm25_valid, data.pm25, 1);
-    add_float("pm4", data.pm_valid, data.pm4, 1);
     add_float("pm10", data.pm10_valid, data.pm10, 1);
     add_float("pressure", data.pressure_valid, data.pressure, 1);
     add_float("pressure_delta_3h", data.pressure_delta_3h_valid, data.pressure_delta_3h, 1);

@@ -145,6 +145,20 @@ bool apply_sanity_filters(SensorData &data) {
         }
     }
 
+    if (data.pm05_valid) {
+        if (!isfinite(data.pm05)) {
+            data.pm05_valid = false;
+            data.pm05 = 0.0f;
+            changed = true;
+        } else {
+            float clamped = clampf(data.pm05, Config::SEN66_PM_NUM_MIN_PPCM3, Config::SEN66_PM_NUM_MAX_PPCM3);
+            if (clamped != data.pm05) {
+                data.pm05 = clamped;
+                changed = true;
+            }
+        }
+    }
+
     data.pm_valid = data.pm25_valid || data.pm10_valid;
     if (data.pm_valid) {
         if (isfinite(data.pm1)) {
@@ -157,23 +171,9 @@ bool apply_sanity_filters(SensorData &data) {
             data.pm1 = 0.0f;
             changed = true;
         }
-        if (isfinite(data.pm4)) {
-            float clamped = clampf(data.pm4, Config::SEN66_PM_MIN_UGM3, Config::SEN66_PM_MAX_UGM3);
-            if (clamped != data.pm4) {
-                data.pm4 = clamped;
-                changed = true;
-            }
-        } else if (data.pm4 != 0.0f) {
-            data.pm4 = 0.0f;
-            changed = true;
-        }
     } else {
         if (data.pm1 != 0.0f) {
             data.pm1 = 0.0f;
-            changed = true;
-        }
-        if (data.pm4 != 0.0f) {
-            data.pm4 = 0.0f;
             changed = true;
         }
     }
@@ -253,7 +253,7 @@ void SensorManager::begin(StorageManager &storage, float temp_offset, float hum_
         Logger::log(Logger::Info, "Sensors", "SEN0466 CO OK at 0x%02X",
                     static_cast<unsigned>(Config::SEN0466_ADDR));
     } else {
-        LOGW("Sensors", "SEN0466 CO not found, PM4 fallback active");
+        LOGW("Sensors", "SEN0466 CO not found, PM1 fallback active");
     }
 
     sen66_.scheduleRetry(Config::SEN66_STARTUP_GRACE_MS);

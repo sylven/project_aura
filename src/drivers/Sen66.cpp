@@ -277,7 +277,6 @@ bool Sen66::readValues(SensorData &out) {
 
     const uint16_t pm1_raw = words[0];
     const uint16_t pm25_raw = words[1];
-    const uint16_t pm4_raw = words[2];
     const uint16_t pm10_raw = words[3];
 
     const int16_t rh_raw = static_cast<int16_t>(words[4]);
@@ -293,12 +292,6 @@ bool Sen66::readValues(SensorData &out) {
         out.pm1 = 0.0f;
     }
 
-    if (pm4_raw != 0xFFFF) {
-        out.pm4 = pm4_raw / 10.0f;
-    } else {
-        out.pm4 = 0.0f;
-    }
-
     out.pm25_valid = (pm25_raw != 0xFFFF);
     if (out.pm25_valid) {
         out.pm25 = pm25_raw / 10.0f;
@@ -311,6 +304,11 @@ bool Sen66::readValues(SensorData &out) {
         out.pm10 = pm10_raw / 10.0f;
     } else {
         out.pm10 = 0.0f;
+    }
+
+    if (!readNumberConcentration(out)) {
+        out.pm05_valid = false;
+        out.pm05 = 0.0f;
     }
 
     out.pm_valid = out.pm25_valid || out.pm10_valid;
@@ -365,6 +363,23 @@ bool Sen66::readValues(SensorData &out) {
             LOGW("SEN66", "CO2 invalid >15s (0xFFFF)");
             co2_invalid_logged_ = true;
         }
+    }
+
+    return true;
+}
+
+bool Sen66::readNumberConcentration(SensorData &out) {
+    uint16_t words[5];
+    if (!readWords(Config::SEN66_CMD_READ_NUM_CONC, words, 5, Config::SEN66_CMD_DELAY_MS)) {
+        return false;
+    }
+
+    const uint16_t pm05_raw = words[0];
+    out.pm05_valid = (pm05_raw != 0xFFFF);
+    if (out.pm05_valid) {
+        out.pm05 = pm05_raw / 10.0f;
+    } else {
+        out.pm05 = 0.0f;
     }
 
     return true;

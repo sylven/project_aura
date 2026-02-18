@@ -13,6 +13,24 @@
 #include "ui/UiText.h"
 #include "ui/ui.h"
 
+namespace {
+
+bool format_pm05_count(float value, char *buf, size_t buf_size) {
+    if (!isfinite(value) || value < 0.0f || !buf || buf_size == 0) {
+        return false;
+    }
+    if (value > 10000.0f) {
+        snprintf(buf, buf_size, "%.0f", value);
+    } else if (value >= 1000.0f) {
+        snprintf(buf, buf_size, "%.1fk", value / 1000.0f);
+    } else {
+        snprintf(buf, buf_size, "%.0f", value);
+    }
+    return true;
+}
+
+} // namespace
+
 void UiController::update_sensor_info_ui() {
     if (info_sensor == INFO_NONE) {
         return;
@@ -200,6 +218,25 @@ void UiController::update_sensor_info_ui() {
             set_dot_color(objects.dot_sensor_info, alert_color_for_mode(dp_col));
             break;
         }
+        case INFO_PM05: {
+            if (currentData.pm05_valid) {
+                char buf[16];
+                if (format_pm05_count(currentData.pm05, buf, sizeof(buf))) {
+                    safe_label_set_text(objects.label_sensor_value, buf);
+                } else {
+                    safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
+                }
+            } else {
+                safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
+            }
+            const char *unit = objects.label_pm05_unit
+                ? lv_label_get_text(objects.label_pm05_unit)
+                : "#/cm3";
+            safe_label_set_text(objects.label_sensor_info_unit, unit);
+            lv_color_t pm05_col = currentData.pm05_valid ? getPM05Color(currentData.pm05) : color_inactive();
+            set_dot_color(objects.dot_sensor_info, alert_color_for_mode(pm05_col));
+            break;
+        }
         case INFO_PM25: {
             if (currentData.pm25_valid) {
                 char buf[16];
@@ -230,8 +267,8 @@ void UiController::update_sensor_info_ui() {
                 safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
             }
             const char *unit = nullptr;
-            if (objects.label_pm10_unit_pro) {
-                unit = lv_label_get_text(objects.label_pm10_unit_pro);
+            if (objects.label_pm10_unit) {
+                unit = lv_label_get_text(objects.label_pm10_unit);
             } else {
                 unit = "ug/m3";
             }
@@ -250,47 +287,26 @@ void UiController::update_sensor_info_ui() {
             } else {
                 safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
             }
-            const char *unit = objects.label_pm1_unit
-                ? lv_label_get_text(objects.label_pm1_unit)
+            const char *unit = objects.label_pm10_unit
+                ? lv_label_get_text(objects.label_pm10_unit)
                 : "ug/m3";
             safe_label_set_text(objects.label_sensor_info_unit, unit);
             lv_color_t pm1_col = pm1_available ? getPM1Color(currentData.pm1) : color_inactive();
             set_dot_color(objects.dot_sensor_info, alert_color_for_mode(pm1_col));
             break;
         }
-        case INFO_PM4: {
-            const bool co_sensor_present = currentData.co_sensor_present;
-            if (co_sensor_present) {
-                const bool co_valid =
-                    currentData.co_valid && isfinite(currentData.co_ppm) && currentData.co_ppm >= 0.0f;
-                if (co_valid) {
-                    char buf[16];
-                    snprintf(buf, sizeof(buf), "%.0f", currentData.co_ppm);
-                    safe_label_set_text(objects.label_sensor_value, buf);
-                } else {
-                    safe_label_set_text(objects.label_sensor_value, UiText::ValueMissingShort());
-                }
-                safe_label_set_text(objects.label_sensor_info_unit, "ppm");
-                lv_color_t co_col = co_valid ? getCOColor(currentData.co_ppm) : color_inactive();
-                set_dot_color(objects.dot_sensor_info, alert_color_for_mode(co_col));
+        case INFO_CO: {
+            const bool co_valid = currentData.co_valid && isfinite(currentData.co_ppm) && currentData.co_ppm >= 0.0f;
+            if (co_valid) {
+                char buf[16];
+                snprintf(buf, sizeof(buf), "%.0f", currentData.co_ppm);
+                safe_label_set_text(objects.label_sensor_value, buf);
             } else {
-                const bool pm4_available =
-                    currentData.pm_valid && isfinite(currentData.pm4) && currentData.pm4 >= 0.0f;
-                if (pm4_available) {
-                    char buf[16];
-                    if (currentData.pm4 < 10.0f) snprintf(buf, sizeof(buf), "%.1f", currentData.pm4);
-                    else snprintf(buf, sizeof(buf), "%.0f", currentData.pm4);
-                    safe_label_set_text(objects.label_sensor_value, buf);
-                } else {
-                    safe_label_set_text(objects.label_sensor_value, UiText::ValueMissing());
-                }
-                const char *unit = objects.label_co_unit
-                    ? lv_label_get_text(objects.label_co_unit)
-                    : "ug/m3";
-                safe_label_set_text(objects.label_sensor_info_unit, unit);
-                lv_color_t pm4_col = pm4_available ? getPM4Color(currentData.pm4) : color_inactive();
-                set_dot_color(objects.dot_sensor_info, alert_color_for_mode(pm4_col));
+                safe_label_set_text(objects.label_sensor_value, UiText::ValueMissingShort());
             }
+            safe_label_set_text(objects.label_sensor_info_unit, "ppm");
+            lv_color_t co_col = co_valid ? getCOColor(currentData.co_ppm) : color_inactive();
+            set_dot_color(objects.dot_sensor_info, alert_color_for_mode(co_col));
             break;
         }
         case INFO_PRESSURE_3H:
@@ -448,10 +464,11 @@ void UiController::restore_sensor_info_selection() {
         case INFO_DP:
             select_humidity_info(info_sensor);
             break;
+        case INFO_PM05:
         case INFO_PM25:
         case INFO_PM10:
         case INFO_PM1:
-        case INFO_PM4:
+        case INFO_CO:
             select_pm_info(info_sensor);
             break;
         case INFO_PRESSURE_3H:
@@ -506,8 +523,7 @@ void UiController::select_pm_info(InfoSensor sensor) {
     info_sensor = sensor;
     hide_all_sensor_info_containers();
 
-    const bool show_co_info = (sensor == INFO_PM4) && currentData.co_sensor_present;
-    if (show_co_info) {
+    if (sensor == INFO_CO) {
         set_visible(objects.co_info, true);
         if (objects.label_sensor_info_title) {
             safe_label_set_text(objects.label_sensor_info_title, "CO");
@@ -517,20 +533,31 @@ void UiController::select_pm_info(InfoSensor sensor) {
     }
 
     set_visible(objects.pm_info, true);
+    const bool pm1_pm10_group = (sensor == INFO_PM1) || (sensor == INFO_PM10);
+    set_visible(objects.pm1_pm10_info, pm1_pm10_group);
+    if (pm1_pm10_group) {
+        auto set_checked = [](lv_obj_t *btn, bool checked) {
+            if (!btn) return;
+            if (checked) lv_obj_add_state(btn, LV_STATE_CHECKED);
+            else lv_obj_clear_state(btn, LV_STATE_CHECKED);
+        };
+        set_checked(objects.btn_pm10_info, sensor == INFO_PM10);
+        set_checked(objects.btn_pm1_info, sensor == INFO_PM1);
+    }
+    set_visible(objects.pm05_info, sensor == INFO_PM05);
     set_visible(objects.pm25_info, sensor == INFO_PM25);
     set_visible(objects.pm10_info, sensor == INFO_PM10);
     set_visible(objects.pm1_info, sensor == INFO_PM1);
-    set_visible(objects.pm4_info, sensor == INFO_PM4);
 
     if (objects.label_sensor_info_title) {
-        if (sensor == INFO_PM25) {
+        if (sensor == INFO_PM05) {
+            safe_label_set_text(objects.label_sensor_info_title, "PM0.5");
+        } else if (sensor == INFO_PM25) {
             safe_label_set_text(objects.label_sensor_info_title, "PM2.5");
         } else if (sensor == INFO_PM10) {
             safe_label_set_text(objects.label_sensor_info_title, "PM10");
         } else if (sensor == INFO_PM1) {
             safe_label_set_text(objects.label_sensor_info_title, "PM1");
-        } else if (sensor == INFO_PM4) {
-            safe_label_set_text(objects.label_sensor_info_title, "PM4");
         }
     }
     update_sensor_info_ui();
@@ -590,9 +617,10 @@ void UiController::hide_all_sensor_info_containers() {
     set_visible(objects.pressure_3h_info, false);
     set_visible(objects.pressure_24h_info, false);
     set_visible(objects.pm_info, false);
+    set_visible(objects.pm1_pm10_info, false);
+    set_visible(objects.pm05_info, false);
     set_visible(objects.pm10_info, false);
     set_visible(objects.pm25_info, false);
     set_visible(objects.pm1_info, false);
-    set_visible(objects.pm4_info, false);
 }
 
