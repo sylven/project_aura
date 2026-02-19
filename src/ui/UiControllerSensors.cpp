@@ -35,9 +35,7 @@ bool format_pm05_count(float value, char *buf, size_t buf_size) {
     if (!isfinite(value) || value < 0.0f || !buf || buf_size == 0) {
         return false;
     }
-    if (value > 10000.0f) {
-        snprintf(buf, buf_size, "%.0f", value);
-    } else if (value >= 1000.0f) {
+    if (value >= 1000.0f) {
         snprintf(buf, buf_size, "%.1fk", value / 1000.0f);
     } else {
         snprintf(buf, buf_size, "%.0f", value);

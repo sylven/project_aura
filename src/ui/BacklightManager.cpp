@@ -76,6 +76,7 @@ void BacklightManager::loadFromPrefs(StorageManager &storage) {
 void BacklightManager::attachBacklight(esp_panel::drivers::Backlight *backlight) {
     panel_backlight_ = backlight;
     backlight_on_ = panel_backlight_ != nullptr;
+    schedule_boot_grace_until_ms_ = millis() + Config::BACKLIGHT_BOOT_GRACE_MS;
     lvgl_port_set_wake_touch_probe(!backlight_on_);
 }
 
@@ -193,6 +194,13 @@ void BacklightManager::adjustWakeMinute(int delta) {
 }
 
 void BacklightManager::refreshSchedule() {
+    if (schedule_enabled_ && schedule_boot_grace_until_ms_ != 0) {
+        if (static_cast<int32_t>(millis() - schedule_boot_grace_until_ms_) < 0) {
+            return;
+        }
+        schedule_boot_grace_until_ms_ = 0;
+    }
+
     bool active = false;
     if (schedule_enabled_) {
         time_t now = time(nullptr);

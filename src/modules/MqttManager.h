@@ -91,7 +91,6 @@ private:
 
     void handleCallback(char *topic, uint8_t *payload, unsigned int length);
     static void staticCallback(char *topic, uint8_t *payload, unsigned int length);
-    static float computeDewPointC(float temp_c, float rh);
     static bool payloadIsOn(const char *payload);
     static bool payloadIsOff(const char *payload);
 

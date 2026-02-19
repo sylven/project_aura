@@ -216,6 +216,15 @@ namespace Config {
     constexpr float AQ_PM25_GREEN_MAX_UGM3 = 12.0f;
     constexpr float AQ_PM25_YELLOW_MAX_UGM3 = 35.0f;
     constexpr float AQ_PM25_ORANGE_MAX_UGM3 = 55.0f;
+    constexpr float AQ_PM1_GREEN_MAX_UGM3 = 10.0f;
+    constexpr float AQ_PM1_YELLOW_MAX_UGM3 = 25.0f;
+    constexpr float AQ_PM1_ORANGE_MAX_UGM3 = 50.0f;
+    constexpr float AQ_PM4_GREEN_MAX_UGM3 = 25.0f;
+    constexpr float AQ_PM4_YELLOW_MAX_UGM3 = 50.0f;
+    constexpr float AQ_PM4_ORANGE_MAX_UGM3 = 75.0f;
+    constexpr float AQ_PM10_GREEN_MAX_UGM3 = 54.0f;
+    constexpr float AQ_PM10_YELLOW_MAX_UGM3 = 154.0f;
+    constexpr float AQ_PM10_ORANGE_MAX_UGM3 = 254.0f;
     constexpr float AQ_PM05_GREEN_MAX_PPCM3 = 250.0f;
     constexpr float AQ_PM05_YELLOW_MAX_PPCM3 = 600.0f;
     constexpr float AQ_PM05_ORANGE_MAX_PPCM3 = 1200.0f;
@@ -250,6 +259,7 @@ namespace Config {
     constexpr uint32_t BACKLIGHT_TIMEOUT_30S = 30UL * 1000UL;
     constexpr uint32_t BACKLIGHT_TIMEOUT_1M = 60UL * 1000UL;
     constexpr uint32_t BACKLIGHT_SCHEDULE_WAKE_MS = 30UL * 1000UL;
+    constexpr uint32_t BACKLIGHT_BOOT_GRACE_MS = 30UL * 1000UL;
     constexpr uint32_t BACKLIGHT_WAKE_BLOCK_MS = 400;
     constexpr uint32_t AUTO_NIGHT_POLL_MS = 1000;
     constexpr uint32_t BLINK_PERIOD_MS = 500;

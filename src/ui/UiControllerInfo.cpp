@@ -19,9 +19,7 @@ bool format_pm05_count(float value, char *buf, size_t buf_size) {
     if (!isfinite(value) || value < 0.0f || !buf || buf_size == 0) {
         return false;
     }
-    if (value > 10000.0f) {
-        snprintf(buf, buf_size, "%.0f", value);
-    } else if (value >= 1000.0f) {
+    if (value >= 1000.0f) {
         snprintf(buf, buf_size, "%.1fk", value / 1000.0f);
     } else {
         snprintf(buf, buf_size, "%.0f", value);
@@ -356,8 +354,6 @@ void UiController::update_sensor_info_ui() {
             lv_color_t delta_24h_color = night_mode
                 ? color_card_border()
                 : getPressureDeltaColor(currentData.pressure_delta_24h, currentData.pressure_delta_24h_valid, true);
-            set_chip_color(objects.chip_delta_3h_1, delta_3h_color);
-            set_chip_color(objects.chip_delta_24h_1, delta_24h_color);
             set_chip_color(objects.chip_delta_3h_1, delta_3h_color);
             set_chip_color(objects.chip_delta_24h_1, delta_24h_color);
             set_dot_color(objects.dot_sensor_info, delta_3h_color);

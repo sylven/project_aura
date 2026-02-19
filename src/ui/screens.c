@@ -10381,7 +10381,7 @@ void create_screen_page_dac_settings() {
                             // label_dac_qr_text
                             lv_obj_t *obj = lv_label_create(parent_obj);
                             objects.label_dac_qr_text = obj;
-                            lv_obj_set_pos(obj, 432, 10);
+                            lv_obj_set_pos(obj, 413, 10);
                             lv_obj_set_size(obj, 300, LV_SIZE_CONTENT);
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);
@@ -10393,7 +10393,7 @@ void create_screen_page_dac_settings() {
                             // qrcode_dac_portal
                             lv_obj_t *obj = lv_qrcode_create(parent_obj, 195, lv_color_hex(0xff000000), lv_color_hex(0xffc2c2c2));
                             objects.qrcode_dac_portal = obj;
-                            lv_obj_set_pos(obj, 485, 76);
+                            lv_obj_set_pos(obj, 466, 76);
                             lv_obj_set_size(obj, 195, 195);
                             lv_qrcode_update(obj, "http://192.168.4.1/dac", 22);
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_ADV_HITTEST);
@@ -10402,8 +10402,8 @@ void create_screen_page_dac_settings() {
                             // label_dac_qr_link
                             lv_obj_t *obj = lv_label_create(parent_obj);
                             objects.label_dac_qr_link = obj;
-                            lv_obj_set_pos(obj, 433, 44);
-                            lv_obj_set_size(obj, 300, 86);
+                            lv_obj_set_pos(obj, 379, 44);
+                            lv_obj_set_size(obj, 368, 86);
                             lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
                             add_style_style_text_primary(obj);
                             lv_obj_set_style_text_font(obj, &ui_font_jet_reg_18, LV_PART_MAIN | LV_STATE_DEFAULT);

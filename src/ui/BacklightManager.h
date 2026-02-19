@@ -61,6 +61,7 @@ private:
     int sleep_minute_ = 0;
     int wake_hour_ = 6;
     int wake_minute_ = 0;
+    uint32_t schedule_boot_grace_until_ms_ = 0;
     uint32_t last_inactive_ms_ = 0;
     uint32_t block_input_until_ms_ = 0;
     bool ui_dirty_ = true;

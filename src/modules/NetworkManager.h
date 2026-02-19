@@ -68,6 +68,7 @@ public:
     bool scanInProgress() const { return wifi_scan_in_progress_; }
 
 private:
+    void registerServerRoutes();
     void warmupIfDisabled();
     void startSta();
     void startAp();
@@ -95,6 +96,7 @@ private:
     bool wifi_ui_dirty_ = false;
     bool mqtt_ui_open_ = false;
     bool theme_ui_open_ = false;
+    bool server_routes_registered_ = false;
     StateChangeCallback state_change_cb_ = nullptr;
     void *state_change_ctx_ = nullptr;
 };

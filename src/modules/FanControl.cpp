@@ -687,21 +687,55 @@ uint8_t FanControl::evaluateAutoDemandPercent(const SensorData &data, bool gas_w
         }
     }
 
+    const bool pm05_valid = data.pm05_valid &&
+                            isfinite(data.pm05) &&
+                            data.pm05 >= 0.0f;
+    demand = maxPercent(demand, pick_percent(auto_config_.pm05,
+                                             pm05_valid,
+                                             data.pm05,
+                                             Config::AQ_PM05_GREEN_MAX_PPCM3,
+                                             Config::AQ_PM05_YELLOW_MAX_PPCM3,
+                                             Config::AQ_PM05_ORANGE_MAX_PPCM3));
+
+    const bool pm1_valid = data.pm1_valid &&
+                           isfinite(data.pm1) &&
+                           data.pm1 >= 0.0f;
+    demand = maxPercent(demand, pick_percent(auto_config_.pm1,
+                                             pm1_valid,
+                                             data.pm1,
+                                             Config::AQ_PM1_GREEN_MAX_UGM3,
+                                             Config::AQ_PM1_YELLOW_MAX_UGM3,
+                                             Config::AQ_PM1_ORANGE_MAX_UGM3));
+
+    const bool pm4_valid = data.pm4_valid &&
+                           isfinite(data.pm4) &&
+                           data.pm4 >= 0.0f;
+    demand = maxPercent(demand, pick_percent(auto_config_.pm4,
+                                             pm4_valid,
+                                             data.pm4,
+                                             Config::AQ_PM4_GREEN_MAX_UGM3,
+                                             Config::AQ_PM4_YELLOW_MAX_UGM3,
+                                             Config::AQ_PM4_ORANGE_MAX_UGM3));
+
     const bool pm25_valid = data.pm25_valid &&
                             isfinite(data.pm25) &&
                             data.pm25 >= 0.0f;
-    if (pm25_valid && auto_config_.pm25.enabled) {
-        float pm = data.pm25;
-        uint8_t pm_percent = auto_config_.pm25.band.red_percent;
-        if (pm <= Config::AQ_PM25_GREEN_MAX_UGM3) {
-            pm_percent = auto_config_.pm25.band.green_percent;
-        } else if (pm <= Config::AQ_PM25_YELLOW_MAX_UGM3) {
-            pm_percent = auto_config_.pm25.band.yellow_percent;
-        } else if (pm <= Config::AQ_PM25_ORANGE_MAX_UGM3) {
-            pm_percent = auto_config_.pm25.band.orange_percent;
-        }
-        demand = maxPercent(demand, pm_percent);
-    }
+    demand = maxPercent(demand, pick_percent(auto_config_.pm25,
+                                             pm25_valid,
+                                             data.pm25,
+                                             Config::AQ_PM25_GREEN_MAX_UGM3,
+                                             Config::AQ_PM25_YELLOW_MAX_UGM3,
+                                             Config::AQ_PM25_ORANGE_MAX_UGM3));
+
+    const bool pm10_valid = data.pm10_valid &&
+                            isfinite(data.pm10) &&
+                            data.pm10 >= 0.0f;
+    demand = maxPercent(demand, pick_percent(auto_config_.pm10,
+                                             pm10_valid,
+                                             data.pm10,
+                                             Config::AQ_PM10_GREEN_MAX_UGM3,
+                                             Config::AQ_PM10_YELLOW_MAX_UGM3,
+                                             Config::AQ_PM10_ORANGE_MAX_UGM3));
 
     const bool voc_valid = !gas_warmup &&
                            data.voc_valid &&

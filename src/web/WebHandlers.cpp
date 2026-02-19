@@ -24,9 +24,18 @@
 namespace {
 
 WebHandlerContext *g_ctx = nullptr;
+constexpr uint32_t kDeferredActionDelayMs = 200;
+bool g_deferred_wifi_start_sta = false;
+bool g_deferred_mqtt_sync = false;
+uint32_t g_deferred_wifi_start_sta_due_ms = 0;
+uint32_t g_deferred_mqtt_sync_due_ms = 0;
 
 WebHandlerContext *ctx() {
     return g_ctx;
+}
+
+bool deadline_reached(uint32_t now_ms, uint32_t due_ms) {
+    return static_cast<int32_t>(now_ms - due_ms) >= 0;
 }
 
 String html_escape(const String &input) {
@@ -85,6 +94,20 @@ bool parse_hex_color(const String &value, lv_color_t &out) {
     return true;
 }
 
+bool has_control_chars(const String &value) {
+    for (size_t i = 0; i < value.length(); i++) {
+        uint8_t c = static_cast<uint8_t>(value[i]);
+        if (c < 32 || c == 127) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool mqtt_topic_has_wildcards(const String &topic) {
+    return topic.indexOf('#') >= 0 || topic.indexOf('+') >= 0;
+}
+
 const char *dac_status_text(const FanControl &fan) {
     if (fan.isFaulted()) {
         return "FAULT";
@@ -99,6 +122,34 @@ const char *dac_status_text(const FanControl &fan) {
 
 void WebHandlersInit(WebHandlerContext *context) {
     g_ctx = context;
+    g_deferred_wifi_start_sta = false;
+    g_deferred_mqtt_sync = false;
+    g_deferred_wifi_start_sta_due_ms = 0;
+    g_deferred_mqtt_sync_due_ms = 0;
+}
+
+void WebHandlersPollDeferred() {
+    WebHandlerContext *context = ctx();
+    if (!context) {
+        return;
+    }
+    const uint32_t now_ms = millis();
+
+    if (g_deferred_wifi_start_sta && deadline_reached(now_ms, g_deferred_wifi_start_sta_due_ms)) {
+        g_deferred_wifi_start_sta = false;
+        g_deferred_wifi_start_sta_due_ms = 0;
+        if (context->wifi_start_sta) {
+            context->wifi_start_sta();
+        }
+    }
+
+    if (g_deferred_mqtt_sync && deadline_reached(now_ms, g_deferred_mqtt_sync_due_ms)) {
+        g_deferred_mqtt_sync = false;
+        g_deferred_mqtt_sync_due_ms = 0;
+        if (context->mqtt_sync_with_wifi) {
+            context->mqtt_sync_with_wifi();
+        }
+    }
 }
 
 bool wifi_is_ascii_printable(const String &value, size_t max_len) {
@@ -172,6 +223,10 @@ void wifi_handle_root() {
     if (!context || !context->server) {
         return;
     }
+    if (!context->wifi_is_ap_mode || !context->wifi_is_ap_mode()) {
+        context->server->send(404, "text/plain", "Not found");
+        return;
+    }
     WebServer &server = *context->server;
     if (server.hasArg("scan") && context->wifi_start_scan) {
         context->wifi_start_scan();
@@ -224,10 +279,8 @@ void wifi_handle_save() {
 
     String html = FPSTR(WebTemplates::kWifiSavePage);
     server.send(200, "text/html", html);
-    delay(200);
-    if (context->wifi_start_sta) {
-        context->wifi_start_sta();
-    }
+    g_deferred_wifi_start_sta = true;
+    g_deferred_wifi_start_sta_due_ms = millis() + kDeferredActionDelayMs;
 }
 
 void wifi_handle_not_found() {
@@ -241,6 +294,10 @@ void wifi_handle_not_found() {
 void mqtt_handle_root() {
     WebHandlerContext *context = ctx();
     if (!context || !context->server || !context->mqtt_client) {
+        return;
+    }
+    if (!context->wifi_is_connected || !context->wifi_is_connected()) {
+        context->server->send(404, "text/plain", "Not found");
         return;
     }
     if (!context->mqtt_ui_open || !*context->mqtt_ui_open) {
@@ -318,6 +375,10 @@ void mqtt_handle_save() {
         return;
     }
     WebServer &server = *context->server;
+    if (!context->wifi_is_connected || !context->wifi_is_connected()) {
+        server.send(404, "text/plain", "Not found");
+        return;
+    }
     if (!context->mqtt_ui_open || !*context->mqtt_ui_open) {
         server.send(409, "text/plain", "Open MQTT screen to enable");
         return;
@@ -351,6 +412,18 @@ void mqtt_handle_save() {
 
     if (topic.isEmpty()) {
         server.send(400, "text/plain", "Base topic required");
+        return;
+    }
+
+    if (has_control_chars(host) || has_control_chars(user) ||
+        has_control_chars(pass) || has_control_chars(name) ||
+        has_control_chars(topic)) {
+        server.send(400, "text/plain", "Fields contain unsupported control characters");
+        return;
+    }
+
+    if (mqtt_topic_has_wildcards(topic)) {
+        server.send(400, "text/plain", "Base topic must not include MQTT wildcards (+ or #)");
         return;
     }
 
@@ -391,11 +464,8 @@ void mqtt_handle_save() {
 
     String html = FPSTR(WebTemplates::kMqttSavePage);
     server.send(200, "text/html", html);
-
-    delay(200);
-    if (context->mqtt_sync_with_wifi) {
-        context->mqtt_sync_with_wifi();
-    }
+    g_deferred_mqtt_sync = true;
+    g_deferred_mqtt_sync_due_ms = millis() + kDeferredActionDelayMs;
 }
 
 void theme_handle_root() {
@@ -498,9 +568,15 @@ void theme_handle_apply() {
     colors.gradient_direction = colors.gradient_enabled ? LV_GRAD_DIR_VER : LV_GRAD_DIR_NONE;
     colors.shadow_enabled = true;
 
-    lvgl_port_lock(-1);
+    if (!lvgl_port_lock(-1)) {
+        server.send(503, "text/plain", "LVGL unavailable");
+        return;
+    }
     context->theme_manager->applyPreviewCustom(colors);
-    lvgl_port_unlock();
+    if (!lvgl_port_unlock()) {
+        server.send(500, "text/plain", "LVGL unlock failed");
+        return;
+    }
 
     server.send(200, "text/plain", "OK");
 }
@@ -551,8 +627,16 @@ void dac_handle_state() {
     sensors["co2_valid"] = data.co2_valid;
     sensors["co_ppm"] = data.co_ppm;
     sensors["co_valid"] = data.co_valid && data.co_sensor_present;
+    sensors["pm05"] = data.pm05;
+    sensors["pm05_valid"] = data.pm05_valid;
+    sensors["pm1"] = data.pm1;
+    sensors["pm1_valid"] = data.pm1_valid;
+    sensors["pm4"] = data.pm4;
+    sensors["pm4_valid"] = data.pm4_valid;
     sensors["pm25"] = data.pm25;
     sensors["pm25_valid"] = data.pm25_valid;
+    sensors["pm10"] = data.pm10;
+    sensors["pm10_valid"] = data.pm10_valid;
     sensors["voc_index"] = data.voc_index;
     sensors["voc_valid"] = data.voc_valid;
     sensors["nox_index"] = data.nox_index;

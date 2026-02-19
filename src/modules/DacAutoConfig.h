@@ -26,7 +26,11 @@ struct DacAutoConfig {
 
     DacAutoSensorConfig co2{true, {30, 50, 70, 100}};
     DacAutoSensorConfig co{true, {20, 50, 100, 100}};
+    DacAutoSensorConfig pm05{true, {20, 40, 70, 100}};
+    DacAutoSensorConfig pm1{true, {20, 40, 70, 100}};
+    DacAutoSensorConfig pm4{true, {20, 40, 70, 100}};
     DacAutoSensorConfig pm25{true, {20, 40, 70, 100}};
+    DacAutoSensorConfig pm10{true, {20, 40, 70, 100}};
     DacAutoSensorConfig voc{true, {20, 50, 80, 100}};
     DacAutoSensorConfig nox{true, {20, 40, 70, 100}};
 };

@@ -146,7 +146,7 @@
     "CUSTOM",
     "PRESETS",
     "EXAMPLE:",
-    "To configure custom theme:\n- Connect Project Aura to WI-FI first\n- Open http://aura.local/theme in browser \nor scan QR code.\n- Save by pressing Back",
+    "To configure custom theme:\n- Connect Project Aura to WI-FI first\n- Open http://aura.local/theme in \nbrowser or scan QR code.\n- Save by pressing Back",
     "AUTO NIGHT MODE",
     "This feature activates \"Night Mode\" colors based on a schedule.\n- Set Start and End times below.\n- Toggle the switch to ON.\n- Manual Night Mode is disabled when Auto Night is ON.",
     "START TIME",

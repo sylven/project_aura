@@ -207,7 +207,10 @@ void UiController::begin() {
     if (!lvgl_ready) {
         return;
     }
-    lvgl_port_lock(-1);
+    if (!lvgl_port_lock(-1)) {
+        LOGE("UI", "LVGL lock failed in begin");
+        return;
+    }
     ui_init();
     themeManager.initAfterUi(storage, night_mode, datetime_ui_dirty);
     if (night_mode) {
@@ -251,7 +254,9 @@ void UiController::begin() {
          static_cast<unsigned long>(UI_LVGL_DIAG_HEARTBEAT_MS),
          static_cast<unsigned long>(UI_LVGL_DIAG_STALL_MS),
          static_cast<unsigned long>(UI_LVGL_DIAG_REBOOT_STALL_MS));
-    lvgl_port_unlock();
+    if (!lvgl_port_unlock()) {
+        LOGW("UI", "LVGL unlock failed in begin");
+    }
     last_clock_tick_ms = millis();
 }
 
@@ -798,17 +803,21 @@ void UiController::set_night_mode_state(bool enabled, bool save_pref) {
     if (enabled == night_mode) {
         return;
     }
-    if (save_pref) {
-        storage.config().night_mode = enabled;
-        storage.saveConfig(true);
-    }
-    night_mode = enabled;
     if (!lvgl_ready) {
+        night_mode = enabled;
+        if (save_pref) {
+            storage.config().night_mode = enabled;
+            storage.saveConfig(true);
+        }
         return;
     }
 
     // Theme/style updates must be serialized with LVGL rendering.
-    lvgl_port_lock(-1);
+    if (!lvgl_port_lock(-1)) {
+        LOGE("UI", "LVGL lock failed in set_night_mode_state");
+        return;
+    }
+    night_mode = enabled;
     if (enabled) {
         night_mode_on_enter();
     }
@@ -817,7 +826,13 @@ void UiController::set_night_mode_state(bool enabled, bool save_pref) {
         night_mode_on_exit();
     }
     data_dirty = true;
-    lvgl_port_unlock();
+    if (!lvgl_port_unlock()) {
+        LOGW("UI", "LVGL unlock failed in set_night_mode_state");
+    }
+    if (save_pref) {
+        storage.config().night_mode = enabled;
+        storage.saveConfig(true);
+    }
 }
 
 void UiController::apply_auto_night_now() {

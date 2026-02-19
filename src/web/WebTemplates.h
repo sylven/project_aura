@@ -1570,6 +1570,15 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
       display: flex; justify-content: space-between; align-items: center;
       margin-bottom: 10px; font-weight: 600;
     }
+    .sensor-right { display: flex; align-items: center; gap: 8px; }
+    .sensor-live {
+      min-width: 74px;
+      text-align: right;
+      color: var(--text-dim);
+      font-size: 12px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
     .threshold-row {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -1606,6 +1615,21 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
     .save-row { display: flex; gap: 10px; margin-top: 12px; }
     .btn.save { background: var(--primary); border-color: #818cf8; }
     .save.unsaved { background: var(--primary-hover); }
+    .btn.save.saving {
+      background: var(--neutral-btn);
+      border-color: var(--border);
+      color: var(--text-dim);
+    }
+    .btn.save.saved {
+      background: var(--success-bg);
+      border-color: var(--success);
+      color: var(--success);
+    }
+    .btn.save.error {
+      background: var(--error-bg);
+      border-color: var(--error);
+      color: var(--error);
+    }
     .btn.reset {
       background: transparent;
       border-color: var(--border);
@@ -1677,7 +1701,7 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
 
       <div class="save-row">
         <button type="button" class="btn reset" onclick="resetAutoDefaults()">RESET DEFAULTS</button>
-        <button type="button" class="btn save" onclick="saveAuto()">SAVE PARAMETERS</button>
+        <button type="button" id="btn_auto_save" class="btn save" onclick="saveAuto()">SAVE</button>
       </div>
       <div class="actions actions-secondary">
         <button id="btn_auto_start" class="btn auto" onclick="sendAction({action:'start_auto'})">START AUTO</button>
@@ -1698,16 +1722,21 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
       {label:"1h", sec:3600},
     ];
     const AUTO_META = {
-      co2:  {name:"CO2",  unit:"ppm",           labels:["<800","800-1k","1k-1.5k",">=1.5k"], defaults:[30,50,70,100]},
-      co:   {name:"CO",   unit:"ppm",           labels:["<9","9-35","35-100",">100"],         defaults:[20,50,100,100]},
-      pm25: {name:"PM2.5",unit:"&micro;g/m&sup3;", labels:["<12","12-34","35-54",">=55"],      defaults:[20,40,70,100]},
-      voc:  {name:"VOC Index", unit:"",         labels:["<150","151-250","251-350",">350"],   defaults:[20,50,80,100]},
-      nox:  {name:"NOx Index", unit:"",         labels:["<50","50-99","100-199",">=200"],     defaults:[20,40,70,100]},
+      co2:  {name:"CO2",unit:"ppm",field:"co2",valid:"co2_valid",decimals:0,labels:["<800","800-1k","1k-1.5k",">=1.5k"],defaults:[30,50,70,100]},
+      co:   {name:"CO",unit:"ppm",field:"co_ppm",valid:"co_valid",decimals:1,labels:["<9","9-35","35-100",">100"],defaults:[20,50,100,100]},
+      pm05: {name:"PM0.5",unit:"#/cm&sup3;",field:"pm05",valid:"pm05_valid",decimals:0,labels:["<=250",">250-600",">600-1200",">1200"],defaults:[20,40,70,100]},
+      pm1:  {name:"PM1.0",unit:"&micro;g/m&sup3;",field:"pm1",valid:"pm1_valid",decimals:1,labels:["<=10",">10-25",">25-50",">50"],defaults:[20,40,70,100]},
+      pm4:  {name:"PM4.0",unit:"&micro;g/m&sup3;",field:"pm4",valid:"pm4_valid",decimals:1,labels:["<=25",">25-50",">50-75",">75"],defaults:[20,40,70,100]},
+      pm25: {name:"PM2.5",unit:"&micro;g/m&sup3;",field:"pm25",valid:"pm25_valid",decimals:1,labels:["<=12",">12-35",">35-55",">55"],defaults:[20,40,70,100]},
+      pm10: {name:"PM10",unit:"&micro;g/m&sup3;",field:"pm10",valid:"pm10_valid",decimals:1,labels:["<=54",">54-154",">154-254",">254"],defaults:[20,40,70,100]},
+      voc:  {name:"VOC Index",unit:"",field:"voc_index",valid:"voc_valid",decimals:0,labels:["<150","151-250","251-350",">350"],defaults:[20,50,80,100]},
+      nox:  {name:"NOx Index",unit:"",field:"nox_index",valid:"nox_valid",decimals:0,labels:["<50","50-99","100-199",">=200"],defaults:[20,40,70,100]},
     };
     const AUTO_KEYS = Object.keys(AUTO_META);
     let latest = null;
     let autoDirty = false;
     let updatingFromState = false;
+    let autoSaveFeedbackTimer = null;
 
     function fmtTimer(sec) {
       if (!sec || sec <= 0) return "--:--";
@@ -1723,15 +1752,52 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
       chip.classList.add("status-" + status.toLowerCase());
     }
 
+    function clearSaveFeedbackTimer() {
+      if (autoSaveFeedbackTimer) {
+        clearTimeout(autoSaveFeedbackTimer);
+        autoSaveFeedbackTimer = null;
+      }
+    }
+
+    function setSaveButtonState(state) {
+      const btn = document.getElementById("btn_auto_save");
+      if (!btn) return;
+      btn.classList.remove("unsaved", "saving", "saved", "error");
+      btn.disabled = false;
+      if (state === "dirty") {
+        btn.classList.add("unsaved");
+        btn.textContent = "SAVE";
+        return;
+      }
+      if (state === "saving") {
+        btn.classList.add("saving");
+        btn.textContent = "SAVING...";
+        btn.disabled = true;
+        return;
+      }
+      if (state === "saved") {
+        btn.classList.add("saved");
+        btn.textContent = "SAVED \u2713";
+        return;
+      }
+      if (state === "error") {
+        btn.classList.add("error");
+        btn.textContent = "SAVE FAILED";
+        return;
+      }
+      btn.textContent = "SAVE";
+    }
+
     function markAutoDirty() {
       if (updatingFromState) return;
       autoDirty = true;
-      document.querySelector(".save").classList.add("unsaved");
+      clearSaveFeedbackTimer();
+      setSaveButtonState("dirty");
     }
 
     function clearAutoDirty() {
       autoDirty = false;
-      document.querySelector(".save").classList.remove("unsaved");
+      setSaveButtonState("idle");
     }
 
     function setMasterAutoVisual(enabled) {
@@ -1781,7 +1847,10 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
         card.innerHTML = `
           <div class="sensor-header">
             <span>${meta.name}${unit}</span>
-            <button type="button" class="ui-switch sensor-en"></button>
+            <div class="sensor-right">
+              <span class="sensor-live">--</span>
+              <button type="button" class="ui-switch sensor-en"></button>
+            </div>
           </div>
           <div class="threshold-row">
             <div class="th-col">
@@ -1826,10 +1895,27 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
       });
     }
 
+    function renderSensorLiveValues(sensors) {
+      document.querySelectorAll("#sensors_wrapper .sensor-card").forEach(card => {
+        const key = card.dataset.key;
+        const meta = AUTO_META[key];
+        const live = card.querySelector(".sensor-live");
+        if (!meta || !live) return;
+        const valid = !!sensors[meta.valid];
+        const raw = Number(sensors[meta.field]);
+        if (!valid || !Number.isFinite(raw)) {
+          live.textContent = "--";
+          return;
+        }
+        live.textContent = raw.toFixed(meta.decimals);
+      });
+    }
+
     function render(data) {
       latest = data;
       const dac = data.dac || {};
       const autoCfg = data.auto || {};
+      const sensors = data.sensors || {};
 
       setStatus(dac.status || "OFFLINE");
       const mode = dac.mode || "manual";
@@ -1860,6 +1946,8 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
       document.querySelectorAll(".timer").forEach(btn => {
         btn.classList.toggle("active", Number(btn.dataset.sec) === dac.selected_timer_s);
       });
+
+      renderSensorLiveValues(sensors);
 
       if (!autoDirty) {
         updatingFromState = true;
@@ -1916,6 +2004,8 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
     }
 
     async function saveAuto() {
+      clearSaveFeedbackTimer();
+      setSaveButtonState("saving");
       const payload = collectAutoPayload();
       payload.rearm = !!(latest &&
                          latest.dac &&
@@ -1930,7 +2020,20 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
       });
       if (r.ok) {
         clearAutoDirty();
+        setSaveButtonState("saved");
+        autoSaveFeedbackTimer = setTimeout(() => {
+          autoSaveFeedbackTimer = null;
+          if (autoDirty) setSaveButtonState("dirty");
+          else setSaveButtonState("idle");
+        }, 1600);
         setTimeout(fetchState, 80);
+      } else {
+        setSaveButtonState("error");
+        autoSaveFeedbackTimer = setTimeout(() => {
+          autoSaveFeedbackTimer = null;
+          if (autoDirty) setSaveButtonState("dirty");
+          else setSaveButtonState("idle");
+        }, 1800);
       }
     }
 
@@ -1962,6 +2065,7 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
 
     buildManualButtons();
     buildAutoCards();
+    setSaveButtonState("idle");
     fetchState();
     setInterval(fetchState, 1000);
   </script>
@@ -1970,3 +2074,4 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
 )HTML";
 
 } // namespace WebTemplates
+

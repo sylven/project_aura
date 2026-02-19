@@ -88,6 +88,7 @@ void AuraNetworkManager::begin(StorageManager &storage) {
     web_ctx_.mqtt_ui_open = &mqtt_ui_open_;
     web_ctx_.theme_ui_open = &theme_ui_open_;
     WebHandlersInit(&web_ctx_);
+    registerServerRoutes();
 
     storage_->loadWiFiSettings(wifi_ssid_, wifi_pass_, wifi_enabled_);
     wifi_enabled_dirty_ = false;
@@ -159,6 +160,25 @@ void AuraNetworkManager::attachDacContext(FanControl &fanControl,
     web_ctx_.fan_control = &fanControl;
     web_ctx_.sensor_manager = &sensorManager;
     web_ctx_.sensor_data = &sensorData;
+}
+
+void AuraNetworkManager::registerServerRoutes() {
+    if (server_routes_registered_) {
+        return;
+    }
+
+    server_.on("/", HTTP_GET, wifi_handle_root);
+    server_.on("/save", HTTP_POST, wifi_handle_save);
+    server_.on("/mqtt", HTTP_GET, mqtt_handle_root);
+    server_.on("/mqtt", HTTP_POST, mqtt_handle_save);
+    server_.on("/theme", HTTP_GET, theme_handle_root);
+    server_.on("/theme/apply", HTTP_POST, theme_handle_apply);
+    server_.on("/dac", HTTP_GET, dac_handle_root);
+    server_.on("/dac/state", HTTP_GET, dac_handle_state);
+    server_.on("/dac/action", HTTP_POST, dac_handle_action);
+    server_.on("/dac/auto", HTTP_POST, dac_handle_auto);
+    server_.onNotFound(wifi_handle_not_found);
+    server_routes_registered_ = true;
 }
 
 String AuraNetworkManager::localUrl(const char *path) const {
@@ -330,15 +350,6 @@ void AuraNetworkManager::poll() {
             } else {
                 LOGW("mDNS", "start failed");
             }
-            server_.on("/mqtt", HTTP_GET, mqtt_handle_root);
-            server_.on("/mqtt", HTTP_POST, mqtt_handle_save);
-            server_.on("/theme", HTTP_GET, theme_handle_root);
-            server_.on("/theme/apply", HTTP_POST, theme_handle_apply);
-            server_.on("/dac", HTTP_GET, dac_handle_root);
-            server_.on("/dac/state", HTTP_GET, dac_handle_state);
-            server_.on("/dac/action", HTTP_POST, dac_handle_action);
-            server_.on("/dac/auto", HTTP_POST, dac_handle_auto);
-            server_.onNotFound(wifi_handle_not_found);
             server_.begin();
             Logger::log(Logger::Info, "WiFi",
                         "connected, IP: %s",
@@ -406,6 +417,7 @@ void AuraNetworkManager::poll() {
         }
         server_.handleClient();
     }
+    WebHandlersPollDeferred();
     notifyStateChangeIfNeeded();
 }
 
@@ -472,15 +484,6 @@ void AuraNetworkManager::startAp() {
     }
     IPAddress ip = WiFi.softAPIP();
     startScan();
-    server_.on("/", HTTP_GET, wifi_handle_root);
-    server_.on("/save", HTTP_POST, wifi_handle_save);
-    server_.on("/theme", HTTP_GET, theme_handle_root);
-    server_.on("/theme/apply", HTTP_POST, theme_handle_apply);
-    server_.on("/dac", HTTP_GET, dac_handle_root);
-    server_.on("/dac/state", HTTP_GET, dac_handle_state);
-    server_.on("/dac/action", HTTP_POST, dac_handle_action);
-    server_.on("/dac/auto", HTTP_POST, dac_handle_auto);
-    server_.onNotFound(wifi_handle_not_found);
     server_.begin();
     wifi_state_ = WIFI_STATE_AP_CONFIG;
     wifi_retry_at_ms_ = 0;

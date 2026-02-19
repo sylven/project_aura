@@ -57,7 +57,11 @@ namespace DacAutoConfigJson {
 void sanitize(DacAutoConfig &cfg) {
     sanitize_sensor(cfg.co2);
     sanitize_sensor(cfg.co);
+    sanitize_sensor(cfg.pm05);
+    sanitize_sensor(cfg.pm1);
+    sanitize_sensor(cfg.pm4);
     sanitize_sensor(cfg.pm25);
+    sanitize_sensor(cfg.pm10);
     sanitize_sensor(cfg.voc);
     sanitize_sensor(cfg.nox);
 }
@@ -69,7 +73,11 @@ void writeJson(ArduinoJson::JsonObject root, const DacAutoConfig &cfg) {
     root["enabled"] = sanitized.enabled;
     write_sensor(root["co2"].to<ArduinoJson::JsonObject>(), sanitized.co2);
     write_sensor(root["co"].to<ArduinoJson::JsonObject>(), sanitized.co);
+    write_sensor(root["pm05"].to<ArduinoJson::JsonObject>(), sanitized.pm05);
+    write_sensor(root["pm1"].to<ArduinoJson::JsonObject>(), sanitized.pm1);
+    write_sensor(root["pm4"].to<ArduinoJson::JsonObject>(), sanitized.pm4);
     write_sensor(root["pm25"].to<ArduinoJson::JsonObject>(), sanitized.pm25);
+    write_sensor(root["pm10"].to<ArduinoJson::JsonObject>(), sanitized.pm10);
     write_sensor(root["voc"].to<ArduinoJson::JsonObject>(), sanitized.voc);
     write_sensor(root["nox"].to<ArduinoJson::JsonObject>(), sanitized.nox);
 }
@@ -83,7 +91,11 @@ bool readJson(ArduinoJson::JsonObjectConst source, DacAutoConfig &cfg) {
     parsed.enabled = source["enabled"] | parsed.enabled;
     read_sensor(source["co2"].as<ArduinoJson::JsonObjectConst>(), parsed.co2);
     read_sensor(source["co"].as<ArduinoJson::JsonObjectConst>(), parsed.co);
+    read_sensor(source["pm05"].as<ArduinoJson::JsonObjectConst>(), parsed.pm05);
+    read_sensor(source["pm1"].as<ArduinoJson::JsonObjectConst>(), parsed.pm1);
+    read_sensor(source["pm4"].as<ArduinoJson::JsonObjectConst>(), parsed.pm4);
     read_sensor(source["pm25"].as<ArduinoJson::JsonObjectConst>(), parsed.pm25);
+    read_sensor(source["pm10"].as<ArduinoJson::JsonObjectConst>(), parsed.pm10);
     read_sensor(source["voc"].as<ArduinoJson::JsonObjectConst>(), parsed.voc);
     read_sensor(source["nox"].as<ArduinoJson::JsonObjectConst>(), parsed.nox);
 

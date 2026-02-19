@@ -122,10 +122,84 @@ void test_sensor_manager_stale_resets_data() {
     TEST_ASSERT_FALSE(data.pressure_valid);
 }
 
+void test_sensor_manager_pm05_clamps_to_sensor_limit() {
+    StorageManager storage;
+    storage.begin();
+    PressureHistory history;
+    SensorManager manager;
+    SensorData data;
+
+    manager.begin(storage, 0.0f, 0.0f);
+
+    data.pm05_valid = true;
+    data.pm05 = Config::SEN66_PM_NUM_MAX_PPCM3 + 500.0f;
+
+    SensorManager::PollResult result =
+        manager.poll(data, storage, history, true);
+
+    TEST_ASSERT_TRUE(result.data_changed);
+    TEST_ASSERT_TRUE(data.pm05_valid);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, Config::SEN66_PM_NUM_MAX_PPCM3, data.pm05);
+}
+
+void test_sensor_manager_pm1_invalid_resets_stale_value() {
+    StorageManager storage;
+    storage.begin();
+    PressureHistory history;
+    SensorManager manager;
+    SensorData data;
+
+    manager.begin(storage, 0.0f, 0.0f);
+
+    data.pm1_valid = false;
+    data.pm1 = 17.5f;
+
+    SensorManager::PollResult result =
+        manager.poll(data, storage, history, true);
+
+    TEST_ASSERT_TRUE(result.data_changed);
+    TEST_ASSERT_FALSE(data.pm1_valid);
+    TEST_ASSERT_FLOAT_WITHIN(0.001f, 0.0f, data.pm1);
+}
+
+void test_sensor_manager_without_co_sensor_keeps_pm1_and_clears_co() {
+    StorageManager storage;
+    storage.begin();
+    PressureHistory history;
+    SensorManager manager;
+    SensorData data;
+
+    auto &co = Sen0466::state();
+    co.start_ok = false;
+
+    manager.begin(storage, 0.0f, 0.0f);
+
+    data.pm1_valid = true;
+    data.pm1 = 6.0f;
+    data.co_sensor_present = true;
+    data.co_valid = true;
+    data.co_warmup = true;
+    data.co_ppm = 3.5f;
+
+    SensorManager::PollResult result =
+        manager.poll(data, storage, history, true);
+
+    TEST_ASSERT_TRUE(result.data_changed);
+    TEST_ASSERT_FALSE(data.co_sensor_present);
+    TEST_ASSERT_FALSE(data.co_valid);
+    TEST_ASSERT_FALSE(data.co_warmup);
+    TEST_ASSERT_FLOAT_WITHIN(0.001f, 0.0f, data.co_ppm);
+    TEST_ASSERT_TRUE(data.pm1_valid);
+    TEST_ASSERT_FLOAT_WITHIN(0.001f, 6.0f, data.pm1);
+}
+
 int main(int, char **) {
     UNITY_BEGIN();
     RUN_TEST(test_sensor_manager_poll_updates_data);
     RUN_TEST(test_sensor_manager_warmup_change);
     RUN_TEST(test_sensor_manager_stale_resets_data);
+    RUN_TEST(test_sensor_manager_pm05_clamps_to_sensor_limit);
+    RUN_TEST(test_sensor_manager_pm1_invalid_resets_stale_value);
+    RUN_TEST(test_sensor_manager_without_co_sensor_keeps_pm1_and_clears_co);
     return UNITY_END();
 }
