@@ -84,10 +84,11 @@ private:
         INFO_AH,
         INFO_MR,
         INFO_DP,
+        INFO_PM05,
         INFO_PM25,
         INFO_PM10,
         INFO_PM1,
-        INFO_PM4,
+        INFO_CO,
         INFO_PRESSURE_3H,
         INFO_PRESSURE_24H,
     };
@@ -144,10 +145,10 @@ private:
     lv_color_t getDewPointColor(float dew_c);
     lv_color_t getCO2Color(int co2);
     lv_color_t getCOColor(float co_ppm);
+    lv_color_t getPM05Color(float pm);
     lv_color_t getPM25Color(float pm);
     lv_color_t getPM10Color(float pm);
     lv_color_t getPM1Color(float pm);
-    lv_color_t getPM4Color(float pm);
     lv_color_t getPressureDeltaColor(float delta, bool valid, bool is24h);
     lv_color_t getVOCColor(int voc);
     lv_color_t getNOxColor(int nox);
@@ -275,10 +276,12 @@ private:
     void on_ah_info_event(lv_event_t *e);
     void on_mr_info_event(lv_event_t *e);
     void on_dp_info_event(lv_event_t *e);
+    void on_pm10_info_event(lv_event_t *e);
+    void on_pm1_info_event(lv_event_t *e);
+    void on_card_pm05_event(lv_event_t *e);
     void on_card_pm25_event(lv_event_t *e);
     void on_card_pm10_event(lv_event_t *e);
-    void on_card_pm1_event(lv_event_t *e);
-    void on_card_pm4_event(lv_event_t *e);
+    void on_card_co_event(lv_event_t *e);
     void on_card_pressure_event(lv_event_t *e);
     void on_pressure_3h_info_event(lv_event_t *e);
     void on_pressure_24h_info_event(lv_event_t *e);
@@ -387,10 +390,12 @@ private:
     static void on_ah_info_event_cb(lv_event_t *e);
     static void on_mr_info_event_cb(lv_event_t *e);
     static void on_dp_info_event_cb(lv_event_t *e);
+    static void on_pm10_info_event_cb(lv_event_t *e);
+    static void on_pm1_info_event_cb(lv_event_t *e);
+    static void on_card_pm05_event_cb(lv_event_t *e);
     static void on_card_pm25_event_cb(lv_event_t *e);
     static void on_card_pm10_event_cb(lv_event_t *e);
-    static void on_card_pm1_event_cb(lv_event_t *e);
-    static void on_card_pm4_event_cb(lv_event_t *e);
+    static void on_card_co_event_cb(lv_event_t *e);
     static void on_card_pressure_event_cb(lv_event_t *e);
     static void on_pressure_3h_info_event_cb(lv_event_t *e);
     static void on_pressure_24h_info_event_cb(lv_event_t *e);

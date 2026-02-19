@@ -568,10 +568,10 @@ lv_color_t UiController::getPM1Color(float pm) {
     return color_red();
 }
 
-lv_color_t UiController::getPM4Color(float pm) {
-    if (pm <= 25.0f) return color_green();
-    if (pm <= 50.0f) return color_yellow();
-    if (pm <= 75.0f) return color_orange();
+lv_color_t UiController::getPM05Color(float pm) {
+    if (pm <= AQ_PM05_GREEN_MAX_PPCM3) return color_green();
+    if (pm <= AQ_PM05_YELLOW_MAX_PPCM3) return color_yellow();
+    if (pm <= AQ_PM05_ORANGE_MAX_PPCM3) return color_orange();
     return color_red();
 }
 

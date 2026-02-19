@@ -113,11 +113,11 @@ void UiController::update_sensor_info_texts() {
     if (objects.label_co_acceptable) safe_label_set_text_static(objects.label_co_acceptable, UiText::InfoCoAcceptable());
     if (objects.label_co_uncomfortable) safe_label_set_text_static(objects.label_co_uncomfortable, UiText::InfoCoUncomfortable());
     if (objects.label_co_poor) safe_label_set_text_static(objects.label_co_poor, UiText::InfoCoPoor());
-    if (objects.label_pm4_text) safe_label_set_text_static(objects.label_pm4_text, UiText::InfoPm4Text());
-    if (objects.label_pm4_excellent) safe_label_set_text_static(objects.label_pm4_excellent, UiText::InfoPm4Excellent());
-    if (objects.label_pm4_acceptable) safe_label_set_text_static(objects.label_pm4_acceptable, UiText::InfoPm4Acceptable());
-    if (objects.label_pm4_uncomfortable) safe_label_set_text_static(objects.label_pm4_uncomfortable, UiText::InfoPm4Uncomfortable());
-    if (objects.label_pm4_poor) safe_label_set_text_static(objects.label_pm4_poor, UiText::InfoPm4Poor());
+    if (objects.label_pm05_text) safe_label_set_text_static(objects.label_pm05_text, UiText::InfoPm05Text());
+    if (objects.label_pm05_excellent) safe_label_set_text_static(objects.label_pm05_excellent, UiText::InfoPm05Excellent());
+    if (objects.label_pm05_acceptable) safe_label_set_text_static(objects.label_pm05_acceptable, UiText::InfoPm05Acceptable());
+    if (objects.label_pm05_uncomfortable) safe_label_set_text_static(objects.label_pm05_uncomfortable, UiText::InfoPm05Uncomfortable());
+    if (objects.label_pm05_poor) safe_label_set_text_static(objects.label_pm05_poor, UiText::InfoPm05Poor());
     if (objects.label_3h_pressure_text) safe_label_set_text_static(objects.label_3h_pressure_text, UiText::InfoPressure3hText());
     if (objects.label_3h_pressure_excellent) safe_label_set_text_static(objects.label_3h_pressure_excellent, UiText::InfoPressure3hExcellent());
     if (objects.label_3h_pressure_acceptable) safe_label_set_text_static(objects.label_3h_pressure_acceptable, UiText::InfoPressure3hAcceptable());

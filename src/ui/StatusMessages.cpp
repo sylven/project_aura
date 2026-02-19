@@ -102,7 +102,7 @@ StatusMessageResult build_status_messages(const SensorData &data, bool gas_warmu
         }
     }
 
-    if (data.pm_valid && isfinite(data.pm1) && data.pm1 >= 0.0f) {
+    if (data.pm1_valid && isfinite(data.pm1) && data.pm1 >= 0.0f) {
         result.has_valid = true;
         if (data.pm1 >= 50.0f) {
             pm1_sev = STATUS_RED;

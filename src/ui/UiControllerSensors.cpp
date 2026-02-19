@@ -31,6 +31,20 @@ float get_co_ppm_value(const SensorData &data) {
     return data.co_ppm;
 }
 
+bool format_pm05_count(float value, char *buf, size_t buf_size) {
+    if (!isfinite(value) || value < 0.0f || !buf || buf_size == 0) {
+        return false;
+    }
+    if (value > 10000.0f) {
+        snprintf(buf, buf_size, "%.0f", value);
+    } else if (value >= 1000.0f) {
+        snprintf(buf, buf_size, "%.1fk", value / 1000.0f);
+    } else {
+        snprintf(buf, buf_size, "%.0f", value);
+    }
+    return true;
+}
+
 } // namespace
 
 void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bool show_co2_bar) {
@@ -196,8 +210,26 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
     lv_color_t pm10_col = currentData.pm10_valid ? getPM10Color(currentData.pm10) : color_inactive();
     set_dot_color(objects.dot_pm10_pro, alert_color_for_mode(pm10_col));
 
-    const bool pm1_available = currentData.pm_valid && isfinite(currentData.pm1) && currentData.pm1 >= 0.0f;
-    if (objects.label_pm1_value) {
+    if (currentData.pm05_valid) {
+        if (!format_pm05_count(currentData.pm05, buf, sizeof(buf))) {
+            strcpy(buf, UiText::ValueMissing());
+        }
+        safe_label_set_text(objects.label_pm05_value, buf);
+    } else {
+        safe_label_set_text_static(objects.label_pm05_value, UiText::ValueMissing());
+    }
+    lv_color_t pm05_col = currentData.pm05_valid ? getPM05Color(currentData.pm05) : color_inactive();
+    set_dot_color(objects.dot_pm05, alert_color_for_mode(pm05_col));
+
+    const bool pm1_available = currentData.pm1_valid && isfinite(currentData.pm1) && currentData.pm1 >= 0.0f;
+    const bool co_sensor_present = has_co_sensor_data(currentData);
+    const bool show_pm1_in_pm10_card = co_sensor_present;
+    set_visible(objects.label_pm1_title, show_pm1_in_pm10_card);
+    set_visible(objects.label_pm1_value, show_pm1_in_pm10_card);
+    set_visible(objects.dot_pm1, show_pm1_in_pm10_card);
+    set_visible(objects.label_pm10_unit, !show_pm1_in_pm10_card);
+
+    if (show_pm1_in_pm10_card && objects.label_pm1_value) {
         if (pm1_available) {
             if (currentData.pm1 < 10.0f) {
                 snprintf(buf, sizeof(buf), "%.1f", currentData.pm1);
@@ -209,7 +241,7 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
             safe_label_set_text_static(objects.label_pm1_value, UiText::ValueMissing());
         }
     }
-    if (objects.dot_pm1) {
+    if (show_pm1_in_pm10_card && objects.dot_pm1) {
         lv_color_t pm1_col = pm1_available ? getPM1Color(currentData.pm1) : color_inactive();
         set_dot_color(objects.dot_pm1, alert_color_for_mode(pm1_col));
     }
@@ -278,12 +310,10 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
         set_dot_color(objects.dot_hcho_1, alert_color_for_mode(hcho_col));
     }
 
-    const bool co_sensor_present = has_co_sensor_data(currentData);
     const bool co_warmup = co_sensor_present && currentData.co_warmup;
     const bool co_available = has_valid_co_sensor_data(currentData);
-    const bool pm4_available = currentData.pm_valid && isfinite(currentData.pm4) && currentData.pm4 >= 0.0f;
     if (objects.label_co_title) {
-        safe_label_set_text_static(objects.label_co_title, co_sensor_present ? "CO" : "PM4");
+        safe_label_set_text_static(objects.label_co_title, co_sensor_present ? "CO" : "PM1");
     }
     if (objects.label_co_unit) {
         const lv_font_t *unit_font = (ui_language == Config::Language::ZH)
@@ -316,11 +346,11 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
             } else {
                 strcpy(buf, UiText::ValueMissingShort());
             }
-        } else if (pm4_available) {
-            if (currentData.pm4 < 10.0f) {
-                snprintf(buf, sizeof(buf), "%.1f", currentData.pm4);
+        } else if (pm1_available) {
+            if (currentData.pm1 < 10.0f) {
+                snprintf(buf, sizeof(buf), "%.1f", currentData.pm1);
             } else {
-                snprintf(buf, sizeof(buf), "%.0f", currentData.pm4);
+                snprintf(buf, sizeof(buf), "%.0f", currentData.pm1);
             }
         } else {
             strcpy(buf, UiText::ValueMissing());
@@ -335,8 +365,8 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
             } else if (co_available) {
                 co_card_col = getCOColor(get_co_ppm_value(currentData));
             }
-        } else if (pm4_available) {
-            co_card_col = getPM4Color(currentData.pm4);
+        } else if (pm1_available) {
+            co_card_col = getPM1Color(currentData.pm1);
         }
         set_dot_color(objects.dot_co, co_warmup ? co_card_col : alert_color_for_mode(co_card_col));
     }

@@ -111,10 +111,12 @@ void UiController::on_rh_info_event_cb(lv_event_t *e) { if (instance_) instance_
 void UiController::on_ah_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_ah_info_event(e); }
 void UiController::on_mr_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_mr_info_event(e); }
 void UiController::on_dp_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_dp_info_event(e); }
+void UiController::on_pm10_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_pm10_info_event(e); }
+void UiController::on_pm1_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_pm1_info_event(e); }
+void UiController::on_card_pm05_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_pm05_event(e); }
 void UiController::on_card_pm25_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_pm25_event(e); }
 void UiController::on_card_pm10_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_pm10_event(e); }
-void UiController::on_card_pm1_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_pm1_event(e); }
-void UiController::on_card_pm4_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_pm4_event(e); }
+void UiController::on_card_co_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_co_event(e); }
 void UiController::on_card_pressure_event_cb(lv_event_t *e) { if (instance_) instance_->on_card_pressure_event(e); }
 void UiController::on_pressure_3h_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_pressure_3h_info_event(e); }
 void UiController::on_pressure_24h_info_event_cb(lv_event_t *e) { if (instance_) instance_->on_pressure_24h_info_event(e); }
@@ -774,6 +776,30 @@ void UiController::on_dp_info_event(lv_event_t *e) {
     }
 }
 
+void UiController::on_pm10_info_event(lv_event_t *e) {
+    const lv_event_code_t code = lv_event_get_code(e);
+    if (code != LV_EVENT_CLICKED && code != LV_EVENT_VALUE_CHANGED) {
+        return;
+    }
+    select_pm_info(INFO_PM10);
+}
+
+void UiController::on_pm1_info_event(lv_event_t *e) {
+    const lv_event_code_t code = lv_event_get_code(e);
+    if (code != LV_EVENT_CLICKED && code != LV_EVENT_VALUE_CHANGED) {
+        return;
+    }
+    select_pm_info(INFO_PM1);
+}
+
+void UiController::on_card_pm05_event(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+        return;
+    }
+    select_pm_info(INFO_PM05);
+    pending_screen_id = SCREEN_ID_PAGE_SENSORS_INFO;
+}
+
 void UiController::on_card_pm25_event(lv_event_t *e) {
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
         return;
@@ -790,19 +816,15 @@ void UiController::on_card_pm10_event(lv_event_t *e) {
     pending_screen_id = SCREEN_ID_PAGE_SENSORS_INFO;
 }
 
-void UiController::on_card_pm1_event(lv_event_t *e) {
+void UiController::on_card_co_event(lv_event_t *e) {
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
         return;
     }
-    select_pm_info(INFO_PM1);
-    pending_screen_id = SCREEN_ID_PAGE_SENSORS_INFO;
-}
-
-void UiController::on_card_pm4_event(lv_event_t *e) {
-    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
-        return;
+    if (currentData.co_sensor_present) {
+        select_pm_info(INFO_CO);
+    } else {
+        select_pm_info(INFO_PM1);
     }
-    select_pm_info(INFO_PM4);
     pending_screen_id = SCREEN_ID_PAGE_SENSORS_INFO;
 }
 

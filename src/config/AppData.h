@@ -5,6 +5,7 @@
 struct SensorData {
     float temperature = 0.0f;
     float humidity = 0.0f;
+    float pm05 = 0.0f;
     float pm1 = 0.0f;
     float pm25 = 0.0f;
     float pm4 = 0.0f;
@@ -20,7 +21,10 @@ struct SensorData {
     bool temp_valid = false;
     bool hum_valid = false;
     bool pm_valid = false;
+    bool pm05_valid = false;
+    bool pm1_valid = false;
     bool pm25_valid = false;
+    bool pm4_valid = false;
     bool pm10_valid = false;
     bool co2_valid = false;
     bool voc_valid = false;

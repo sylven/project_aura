@@ -76,6 +76,7 @@ namespace Config {
     constexpr uint16_t SEN66_CMD_STOP = 0x0104;
     constexpr uint16_t SEN66_CMD_DATA_READY = 0x0202;
     constexpr uint16_t SEN66_CMD_READ_VALUES = 0x0300;
+    constexpr uint16_t SEN66_CMD_READ_NUM_CONC = 0x0316;
     constexpr uint16_t SEN66_CMD_READ_STATUS = 0xD206;
     constexpr uint16_t SEN66_CMD_FRC = 0x6707;
     constexpr uint16_t SEN66_CMD_ASC = 0x6711;
@@ -190,6 +191,8 @@ namespace Config {
     constexpr float SEN66_HUM_RECOMM_MAX = 80.0f;
     constexpr float SEN66_PM_MIN_UGM3 = 0.0f;
     constexpr float SEN66_PM_MAX_UGM3 = 999.0f;
+    constexpr float SEN66_PM_NUM_MIN_PPCM3 = 0.0f;
+    constexpr float SEN66_PM_NUM_MAX_PPCM3 = 3000.0f;
     constexpr int SEN66_CO2_MIN_PPM = 0;
     constexpr int SEN66_CO2_MAX_PPM = 40000;
     constexpr int SEN66_VOC_MIN = 1;
@@ -213,6 +216,9 @@ namespace Config {
     constexpr float AQ_PM25_GREEN_MAX_UGM3 = 12.0f;
     constexpr float AQ_PM25_YELLOW_MAX_UGM3 = 35.0f;
     constexpr float AQ_PM25_ORANGE_MAX_UGM3 = 55.0f;
+    constexpr float AQ_PM05_GREEN_MAX_PPCM3 = 250.0f;
+    constexpr float AQ_PM05_YELLOW_MAX_PPCM3 = 600.0f;
+    constexpr float AQ_PM05_ORANGE_MAX_PPCM3 = 1200.0f;
     constexpr int AQ_VOC_GREEN_MAX_INDEX = 150;
     constexpr int AQ_VOC_YELLOW_MAX_INDEX = 250;
     constexpr int AQ_VOC_ORANGE_MAX_INDEX = 350;
