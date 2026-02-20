@@ -33,6 +33,7 @@ void UiController::update_settings_texts() {
     if (objects.label_btn_factory_reset) safe_label_set_text(objects.label_btn_factory_reset, UiText::LabelFactoryReset());
     if (objects.label_btn_co2_calib) safe_label_set_text(objects.label_btn_co2_calib, UiText::LabelCo2Calibration());
     if (objects.label_btn_about) safe_label_set_text(objects.label_btn_about, UiText::LabelAbout());
+    if (objects.label_btn_web_page) safe_label_set_text(objects.label_btn_web_page, "WEB\nPAGE");
     if (objects.label_btn_about_back) {
         const char *back_label = UiText::LabelSettingsBack();
         if (ui_language == Config::Language::EN) {
@@ -40,12 +41,28 @@ void UiController::update_settings_texts() {
         }
         safe_label_set_text(objects.label_btn_about_back, back_label);
     }
+    if (objects.label_btn_web_page_back) {
+        const char *back_label = UiText::LabelSettingsBack();
+        if (ui_language == Config::Language::EN) {
+            back_label = "BACK";
+        }
+        safe_label_set_text(objects.label_btn_web_page_back, back_label);
+    }
     if (objects.container_about_text) {
         char about_text[256];
         snprintf(about_text, sizeof(about_text),
                  "Project Aura\nVersion: v%s\n(c) Volodymyr Papush (21CNCStudio)\nOpen-source firmware (GPL-3.0-or-later)\n21cncstudio.com",
                  APP_VERSION);
         safe_label_set_text(objects.container_about_text, about_text);
+    }
+    if (objects.container_web_page_text) {
+        safe_label_set_text(
+            objects.container_web_page_text,
+            "To open the web page, either enable the device's Wi-Fi AP mode or connect it to your home Wi-Fi.\n"
+            "Then scan the QR code or open this link:");
+    }
+    if (objects.container_web_page_link) {
+        safe_label_set_text(objects.container_web_page_link, networkManager.localUrl("/wifi").c_str());
     }
     if (objects.label_btn_units_led_indicators) safe_label_set_text(objects.label_btn_units_led_indicators, UiText::LabelLedIndicators());
     if (objects.label_btn_alert_blink) safe_label_set_text(objects.label_btn_alert_blink, UiText::LabelAlertBlink());

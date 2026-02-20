@@ -194,6 +194,8 @@ private:
     void on_back_event(lv_event_t *e);
     void on_about_event(lv_event_t *e);
     void on_about_back_event(lv_event_t *e);
+    void on_web_page_event(lv_event_t *e);
+    void on_web_page_back_event(lv_event_t *e);
     void on_wifi_settings_event(lv_event_t *e);
     void on_wifi_back_event(lv_event_t *e);
     void on_mqtt_settings_event(lv_event_t *e);
@@ -308,6 +310,8 @@ private:
     static void on_back_event_cb(lv_event_t *e);
     static void on_about_event_cb(lv_event_t *e);
     static void on_about_back_event_cb(lv_event_t *e);
+    static void on_web_page_event_cb(lv_event_t *e);
+    static void on_web_page_back_event_cb(lv_event_t *e);
     static void on_wifi_settings_event_cb(lv_event_t *e);
     static void on_wifi_back_event_cb(lv_event_t *e);
     static void on_mqtt_settings_event_cb(lv_event_t *e);

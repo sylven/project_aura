@@ -1272,6 +1272,7 @@ void UiController::init_ui_defaults() {
     }
 
     set_visible(objects.container_about, false);
+    set_visible(objects.container_web_page, false);
 
     if (objects.wifi_status_icon_1) lv_obj_add_flag(objects.wifi_status_icon_1, LV_OBJ_FLAG_HIDDEN);
     if (objects.wifi_status_icon_2) lv_obj_add_flag(objects.wifi_status_icon_2, LV_OBJ_FLAG_HIDDEN);

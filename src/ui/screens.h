@@ -213,6 +213,8 @@ typedef struct _objects_t {
     lv_obj_t *label_language_title;
     lv_obj_t *btn_dac_settings;
     lv_obj_t *label_dac_settings;
+    lv_obj_t *btn_web_page;
+    lv_obj_t *label_btn_web_page;
     lv_obj_t *container_confirm;
     lv_obj_t *container_confirm_card;
     lv_obj_t *btn_confirm_ok;
@@ -233,6 +235,13 @@ typedef struct _objects_t {
     lv_obj_t *about_qr;
     lv_obj_t *btn_about_back;
     lv_obj_t *label_btn_about_back;
+    lv_obj_t *container_web_page;
+    lv_obj_t *card_web_page;
+    lv_obj_t *container_web_page_text;
+    lv_obj_t *web_page_qr;
+    lv_obj_t *btn_web_page_back;
+    lv_obj_t *label_btn_web_page_back;
+    lv_obj_t *container_web_page_link;
     lv_obj_t *container_settings_header;
     lv_obj_t *label_settings_title;
     lv_obj_t *btn_back;

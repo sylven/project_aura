@@ -168,6 +168,7 @@ void AuraNetworkManager::registerServerRoutes() {
     }
 
     server_.on("/", HTTP_GET, wifi_handle_root);
+    server_.on("/wifi", HTTP_GET, wifi_handle_root);
     server_.on("/save", HTTP_POST, wifi_handle_save);
     server_.on("/mqtt", HTTP_GET, mqtt_handle_root);
     server_.on("/mqtt", HTTP_POST, mqtt_handle_save);

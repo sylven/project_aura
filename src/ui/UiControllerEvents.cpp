@@ -29,6 +29,8 @@ void UiController::on_settings_event_cb(lv_event_t *e) { if (instance_) instance
 void UiController::on_back_event_cb(lv_event_t *e) { if (instance_) instance_->on_back_event(e); }
 void UiController::on_about_event_cb(lv_event_t *e) { if (instance_) instance_->on_about_event(e); }
 void UiController::on_about_back_event_cb(lv_event_t *e) { if (instance_) instance_->on_about_back_event(e); }
+void UiController::on_web_page_event_cb(lv_event_t *e) { if (instance_) instance_->on_web_page_event(e); }
+void UiController::on_web_page_back_event_cb(lv_event_t *e) { if (instance_) instance_->on_web_page_back_event(e); }
 void UiController::on_wifi_settings_event_cb(lv_event_t *e) { if (instance_) instance_->on_wifi_settings_event(e); }
 void UiController::on_wifi_back_event_cb(lv_event_t *e) { if (instance_) instance_->on_wifi_back_event(e); }
 void UiController::on_mqtt_settings_event_cb(lv_event_t *e) { if (instance_) instance_->on_mqtt_settings_event(e); }
@@ -151,6 +153,14 @@ void UiController::on_back_event(lv_event_t *e) {
         return;
     }
 
+    if (current_screen_id == SCREEN_ID_PAGE_SETTINGS &&
+        objects.container_web_page &&
+        !lv_obj_has_flag(objects.container_web_page, LV_OBJ_FLAG_HIDDEN)) {
+        LOGD("UI", "back pressed (close web page)");
+        lv_obj_add_flag(objects.container_web_page, LV_OBJ_FLAG_HIDDEN);
+        return;
+    }
+
     LOGD("UI", "back pressed");
     bool save_config = false;
     bool offsets_saved = false;
@@ -202,6 +212,53 @@ void UiController::on_about_back_event(lv_event_t *e) {
     LOGD("UI", "about back pressed");
     if (objects.container_about) {
         lv_obj_add_flag(objects.container_about, LV_OBJ_FLAG_HIDDEN);
+    }
+}
+
+void UiController::on_web_page_event(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+        return;
+    }
+    LOGD("UI", "web page pressed");
+    if (objects.container_web_page) {
+        lv_obj_clear_flag(objects.container_web_page, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_add_flag(objects.container_web_page, LV_OBJ_FLAG_CLICKABLE);
+    }
+
+    const bool wifi_enabled = networkManager.isEnabled();
+    const AuraNetworkManager::WifiState wifi_state = networkManager.state();
+    String web_url;
+    if (wifi_enabled && wifi_state == AuraNetworkManager::WIFI_STATE_AP_CONFIG) {
+        web_url = "http://192.168.4.1/wifi";
+    } else if (wifi_enabled && wifi_state == AuraNetworkManager::WIFI_STATE_STA_CONNECTED) {
+        web_url = networkManager.localUrl("/wifi");
+    }
+
+    if (objects.container_web_page_link) {
+        if (!web_url.isEmpty()) {
+            safe_label_set_text(objects.container_web_page_link, web_url.c_str());
+        } else {
+            safe_label_set_text(objects.container_web_page_link, "Enable AP or connect to Wi-Fi");
+        }
+    }
+
+    if (objects.web_page_qr) {
+        if (!web_url.isEmpty()) {
+            lv_obj_clear_flag(objects.web_page_qr, LV_OBJ_FLAG_HIDDEN);
+            lv_qrcode_update(objects.web_page_qr, web_url.c_str(), web_url.length());
+        } else {
+            lv_obj_add_flag(objects.web_page_qr, LV_OBJ_FLAG_HIDDEN);
+        }
+    }
+}
+
+void UiController::on_web_page_back_event(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+        return;
+    }
+    LOGD("UI", "web page back pressed");
+    if (objects.container_web_page) {
+        lv_obj_add_flag(objects.container_web_page, LV_OBJ_FLAG_HIDDEN);
     }
 }
 
