@@ -339,6 +339,26 @@ void wifi_handle_root() {
     server.send(200, "text/html", html);
 }
 
+void dashboard_handle_root() {
+    WebHandlerContext *context = ctx();
+    if (!context || !context->server) {
+        return;
+    }
+
+    // Keep captive-portal setup flow intact in AP mode.
+    if (context->wifi_is_ap_mode && context->wifi_is_ap_mode()) {
+        wifi_handle_root();
+        return;
+    }
+
+    if (context->wifi_is_connected && !context->wifi_is_connected()) {
+        context->server->send(404, "text/plain", "Not found");
+        return;
+    }
+
+    context->server->send_P(200, "text/html", WebTemplates::kDashboardPageTemplate);
+}
+
 void wifi_handle_save() {
     WebHandlerContext *context = ctx();
     if (!context || !context->server || !context->storage) {

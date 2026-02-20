@@ -21,6 +21,7 @@ struct WebHandlerContext {
     WebServer *server = nullptr;
     StorageManager *storage = nullptr;
     ThemeManager *theme_manager = nullptr;
+    const String *hostname = nullptr;
 
     String *wifi_ssid = nullptr;
     String *wifi_pass = nullptr;
@@ -64,6 +65,7 @@ String wifi_label_safe(const String &value);
 void wifi_build_scan_items(int count);
 
 void wifi_handle_root();
+void dashboard_handle_root();
 void wifi_handle_save();
 void wifi_handle_not_found();
 void mqtt_handle_root();

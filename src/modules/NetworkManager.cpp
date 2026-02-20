@@ -74,6 +74,7 @@ void AuraNetworkManager::begin(StorageManager &storage) {
 
     web_ctx_.server = &server_;
     web_ctx_.storage = storage_;
+    web_ctx_.hostname = &hostname_;
     web_ctx_.wifi_ssid = &wifi_ssid_;
     web_ctx_.wifi_pass = &wifi_pass_;
     web_ctx_.wifi_enabled = &wifi_enabled_;
@@ -171,7 +172,8 @@ void AuraNetworkManager::registerServerRoutes() {
         return;
     }
 
-    server_.on("/", HTTP_GET, wifi_handle_root);
+    server_.on("/", HTTP_GET, dashboard_handle_root);
+    server_.on("/dashboard", HTTP_GET, dashboard_handle_root);
     server_.on("/wifi", HTTP_GET, wifi_handle_root);
     server_.on("/save", HTTP_POST, wifi_handle_save);
     server_.on("/mqtt", HTTP_GET, mqtt_handle_root);
