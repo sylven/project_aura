@@ -1,0 +1,290 @@
+// SPDX-FileCopyrightText: 2025-2026 Volodymyr Papush (21CNCStudio)
+// SPDX-License-Identifier: GPL-3.0-or-later
+// GPL-3.0-or-later: https://www.gnu.org/licenses/gpl-3.0.html
+// Want to use this code in a commercial product while keeping modifications proprietary?
+// Purchase a Commercial License: see COMMERCIAL_LICENSE_SUMMARY.md
+
+#include "modules/ChartsHistory.h"
+
+#include <math.h>
+#include <string.h>
+#include "core/Logger.h"
+#include "modules/StorageManager.h"
+
+namespace {
+
+constexpr uint32_t kChartsHistoryMagic = 0x43524849; // "CRHI"
+constexpr uint16_t kChartsHistoryVersion = 1;
+
+} // namespace
+
+ChartsHistory::NowEpochFn ChartsHistory::now_epoch_fn_ = &ChartsHistory::nowEpochRaw;
+
+time_t ChartsHistory::nowEpochRaw() {
+    return time(nullptr);
+}
+
+void ChartsHistory::setNowEpochFn(NowEpochFn fn) {
+    now_epoch_fn_ = fn ? fn : &ChartsHistory::nowEpochRaw;
+}
+
+bool ChartsHistory::getNowEpoch(uint32_t &now_epoch) const {
+    time_t now = now_epoch_fn_();
+    if (now <= Config::TIME_VALID_EPOCH) {
+        return false;
+    }
+    now_epoch = static_cast<uint32_t>(now);
+    return true;
+}
+
+bool ChartsHistory::isStale(uint32_t now_epoch) const {
+    if (state_.epoch == 0) {
+        return false;
+    }
+    if (now_epoch < state_.epoch) {
+        return true;
+    }
+    return (now_epoch - state_.epoch) > Config::CHART_HISTORY_MAX_AGE_S;
+}
+
+void ChartsHistory::reset(StorageManager &storage, bool clear_storage) {
+    memset(&state_, 0, sizeof(state_));
+    state_.magic = kChartsHistoryMagic;
+    state_.version = kChartsHistoryVersion;
+    last_sample_ms_ = 0;
+    last_save_ms_ = 0;
+    if (clear_storage) {
+        storage.removeBlob(StorageManager::kChartsPath);
+    }
+}
+
+void ChartsHistory::clear(StorageManager &storage) {
+    reset(storage, true);
+}
+
+void ChartsHistory::load(StorageManager &storage) {
+    reset(storage, false);
+    if (!storage.loadBlob(StorageManager::kChartsPath, &state_, sizeof(state_))) {
+        Logger::log(Logger::Debug, "ChartsHistory", "no stored history");
+        return;
+    }
+
+    if (state_.magic != kChartsHistoryMagic || state_.version != kChartsHistoryVersion) {
+        LOGW("ChartsHistory", "invalid stored history header, reset");
+        reset(storage, true);
+        return;
+    }
+
+    if (state_.index >= kCapacity || state_.count > kCapacity) {
+        LOGW("ChartsHistory", "invalid stored index/count, reset");
+        reset(storage, true);
+        return;
+    }
+
+    uint32_t now_epoch = 0;
+    if (getNowEpoch(now_epoch) && isStale(now_epoch)) {
+        LOGW("ChartsHistory", "stored history stale, reset");
+        reset(storage, true);
+        return;
+    }
+
+    last_sample_ms_ = millis() - Config::CHART_HISTORY_STEP_MS;
+    Logger::log(Logger::Info, "ChartsHistory",
+                "restored count=%u idx=%u epoch=%u",
+                static_cast<unsigned>(state_.count),
+                static_cast<unsigned>(state_.index),
+                static_cast<unsigned>(state_.epoch));
+}
+
+void ChartsHistory::saveIfDue(StorageManager &storage, uint32_t now_ms) {
+    if (state_.count == 0) {
+        return;
+    }
+    if (now_ms - last_save_ms_ < Config::CHART_HISTORY_SAVE_MS) {
+        return;
+    }
+    last_save_ms_ = now_ms;
+    state_.magic = kChartsHistoryMagic;
+    state_.version = kChartsHistoryVersion;
+    storage.saveBlobAtomic(StorageManager::kChartsPath, &state_, sizeof(state_));
+}
+
+ChartsHistory::Sample ChartsHistory::makeSample(const SensorData &data) const {
+    Sample sample = {};
+
+    if (data.co2_valid) {
+        sample.valid_mask |= metricBit(METRIC_CO2);
+        sample.values[METRIC_CO2] = static_cast<float>(data.co2);
+    }
+    if (data.temp_valid) {
+        sample.valid_mask |= metricBit(METRIC_TEMPERATURE);
+        sample.values[METRIC_TEMPERATURE] = data.temperature;
+    }
+    if (data.hum_valid) {
+        sample.valid_mask |= metricBit(METRIC_HUMIDITY);
+        sample.values[METRIC_HUMIDITY] = data.humidity;
+    }
+    if (data.pressure_valid) {
+        sample.valid_mask |= metricBit(METRIC_PRESSURE);
+        sample.values[METRIC_PRESSURE] = data.pressure;
+    }
+    if (data.co_valid && data.co_sensor_present) {
+        sample.valid_mask |= metricBit(METRIC_CO);
+        sample.values[METRIC_CO] = data.co_ppm;
+    }
+    if (data.voc_valid) {
+        sample.valid_mask |= metricBit(METRIC_VOC);
+        sample.values[METRIC_VOC] = static_cast<float>(data.voc_index);
+    }
+    if (data.nox_valid) {
+        sample.valid_mask |= metricBit(METRIC_NOX);
+        sample.values[METRIC_NOX] = static_cast<float>(data.nox_index);
+    }
+    if (data.hcho_valid) {
+        sample.valid_mask |= metricBit(METRIC_HCHO);
+        sample.values[METRIC_HCHO] = data.hcho;
+    }
+    if (data.pm05_valid) {
+        sample.valid_mask |= metricBit(METRIC_PM05);
+        sample.values[METRIC_PM05] = data.pm05;
+    }
+    if (data.pm1_valid) {
+        sample.valid_mask |= metricBit(METRIC_PM1);
+        sample.values[METRIC_PM1] = data.pm1;
+    }
+    if (data.pm25_valid) {
+        sample.valid_mask |= metricBit(METRIC_PM25);
+        sample.values[METRIC_PM25] = data.pm25;
+    }
+    if (data.pm4_valid) {
+        sample.valid_mask |= metricBit(METRIC_PM4);
+        sample.values[METRIC_PM4] = data.pm4;
+    }
+    if (data.pm10_valid) {
+        sample.valid_mask |= metricBit(METRIC_PM10);
+        sample.values[METRIC_PM10] = data.pm10;
+    }
+
+    return sample;
+}
+
+void ChartsHistory::appendSample(const Sample &sample) {
+    const int idx = state_.index;
+    state_.valid_mask[idx] = sample.valid_mask;
+    for (int metric = 0; metric < kMetricCount; ++metric) {
+        state_.values[metric][idx] = sample.values[metric];
+    }
+
+    state_.index = static_cast<uint16_t>((idx + 1) % kCapacity);
+    if (state_.count < kCapacity) {
+        state_.count++;
+    }
+}
+
+bool ChartsHistory::metricValidAtRaw(int raw_index, Metric metric) const {
+    if (raw_index < 0 || raw_index >= kCapacity) {
+        return false;
+    }
+    return (state_.valid_mask[raw_index] & metricBit(metric)) != 0;
+}
+
+void ChartsHistory::appendGapPoints(uint32_t gap_points, const Sample &current_sample) {
+    if (gap_points == 0 || state_.count == 0) {
+        return;
+    }
+    if (gap_points > static_cast<uint32_t>(kCapacity - 1)) {
+        gap_points = static_cast<uint32_t>(kCapacity - 1);
+    }
+
+    const int latest_raw = (state_.index + kCapacity - 1) % kCapacity;
+    const bool pressure_start_valid = metricValidAtRaw(latest_raw, METRIC_PRESSURE);
+    const bool pressure_end_valid = (current_sample.valid_mask & metricBit(METRIC_PRESSURE)) != 0;
+    const float pressure_start = state_.values[METRIC_PRESSURE][latest_raw];
+    const float pressure_end = current_sample.values[METRIC_PRESSURE];
+
+    for (uint32_t i = 1; i <= gap_points; ++i) {
+        Sample gap = {};
+        if (pressure_start_valid && pressure_end_valid &&
+            isfinite(pressure_start) && isfinite(pressure_end)) {
+            float ratio = static_cast<float>(i) / static_cast<float>(gap_points + 1);
+            gap.valid_mask |= metricBit(METRIC_PRESSURE);
+            gap.values[METRIC_PRESSURE] =
+                pressure_start + (pressure_end - pressure_start) * ratio;
+        }
+        appendSample(gap);
+    }
+}
+
+void ChartsHistory::update(const SensorData &data, StorageManager &storage) {
+    const uint32_t now_ms = millis();
+    const uint32_t step_ms = Config::CHART_HISTORY_STEP_MS;
+    const uint32_t step_s = step_ms / 1000UL;
+
+    uint32_t now_epoch = 0;
+    bool time_valid = getNowEpoch(now_epoch);
+    if (time_valid && isStale(now_epoch)) {
+        LOGW("ChartsHistory", "history stale, reset");
+        reset(storage, true);
+        last_sample_ms_ = now_ms - step_ms;
+    }
+
+    Sample sample = makeSample(data);
+
+    if (time_valid && state_.epoch != 0) {
+        if (now_epoch < state_.epoch) {
+            LOGW("ChartsHistory", "epoch moved backwards, reset");
+            reset(storage, true);
+            last_sample_ms_ = now_ms - step_ms;
+        } else {
+            uint32_t delta_s = now_epoch - state_.epoch;
+            if (delta_s < step_s) {
+                return;
+            }
+            uint32_t steps = delta_s / step_s;
+            if (steps > 1) {
+                appendGapPoints(steps - 1, sample);
+            }
+        }
+    } else if (now_ms - last_sample_ms_ < step_ms) {
+        return;
+    }
+
+    last_sample_ms_ = now_ms;
+    appendSample(sample);
+    state_.epoch = time_valid ? now_epoch : 0;
+
+    saveIfDue(storage, now_ms);
+}
+
+int ChartsHistory::rawIndexFromOldest(uint16_t offset) const {
+    if (offset >= state_.count) {
+        return -1;
+    }
+    int oldest = (state_.index + kCapacity - state_.count) % kCapacity;
+    return (oldest + offset) % kCapacity;
+}
+
+bool ChartsHistory::entryFromOldest(uint16_t offset, Entry &out) const {
+    int raw = rawIndexFromOldest(offset);
+    if (raw < 0) {
+        return false;
+    }
+    out.valid_mask = state_.valid_mask[raw];
+    for (int metric = 0; metric < kMetricCount; ++metric) {
+        out.values[metric] = state_.values[metric][raw];
+    }
+    return true;
+}
+
+bool ChartsHistory::metricValueFromOldest(uint16_t offset,
+                                          Metric metric,
+                                          float &value,
+                                          bool &valid) const {
+    int raw = rawIndexFromOldest(offset);
+    if (raw < 0 || metric >= METRIC_COUNT) {
+        return false;
+    }
+    value = state_.values[metric][raw];
+    valid = metricValidAtRaw(raw, metric);
+    return true;
+}

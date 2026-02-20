@@ -55,6 +55,7 @@ public:
     static constexpr const char *kLastGoodPath = "/config.last_good.json";
     static constexpr const char *kVocStatePath = "/voc_state.bin";
     static constexpr const char *kPressurePath = "/pressure.bin";
+    static constexpr const char *kChartsPath = "/charts.bin";
     static constexpr const char *kDacAutoPath = "/dac_auto.json";
 
 private:

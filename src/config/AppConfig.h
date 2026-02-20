@@ -284,6 +284,13 @@ namespace Config {
     constexpr uint32_t DAC_HEALTH_CHECK_MS = 5000;
     constexpr uint8_t DAC_HEALTH_FAIL_THRESHOLD = 3;
     constexpr uint32_t DAC_RECOVER_COOLDOWN_MS = 30UL * 1000UL;
+    constexpr uint32_t CHART_HISTORY_STEP_MS = 5UL * 60UL * 1000UL;
+    constexpr int CHART_HISTORY_24H_SAMPLES = 288;
+    constexpr int CHART_HISTORY_3H_STEPS = 36;
+    constexpr int CHART_HISTORY_1H_STEPS = 12;
+    constexpr uint32_t CHART_HISTORY_SAVE_MS = 30UL * 60UL * 1000UL;
+    constexpr uint32_t CHART_HISTORY_MAX_AGE_S =
+        (CHART_HISTORY_STEP_MS / 1000UL) * CHART_HISTORY_24H_SAMPLES;
     constexpr uint32_t PRESSURE_HISTORY_STEP_MS = 5UL * 60UL * 1000UL;
     constexpr int PRESSURE_HISTORY_24H_SAMPLES = 288;
     constexpr int PRESSURE_HISTORY_3H_STEPS = 36;

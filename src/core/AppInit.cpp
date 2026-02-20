@@ -164,6 +164,7 @@ esp_panel::board::Board *AppInit::initBoardAndPeripherals(Context &ctx) {
     ctx.backlightManager.attachBacklight(board->getBacklight());
     ctx.timeManager.initRtc();
     ctx.pressureHistory.load(ctx.storage, ctx.currentData);
+    ctx.chartsHistory.load(ctx.storage);
     ctx.uiController.apply_auto_night_now();
 
     BootHelpers::logGt911Address();

@@ -17,6 +17,7 @@
 
 #include "modules/StorageManager.h"
 #include "modules/PressureHistory.h"
+#include "modules/ChartsHistory.h"
 #include "modules/NetworkManager.h"
 #include "modules/MqttManager.h"
 #include "modules/SensorManager.h"
@@ -37,6 +38,7 @@ using namespace Config;
 SensorData currentData;
 StorageManager storage;
 PressureHistory pressureHistory;
+ChartsHistory chartsHistory;
 AuraNetworkManager networkManager;
 MqttManager mqttManager;
 SensorManager sensorManager;
@@ -114,6 +116,7 @@ void setup()
         nightModeManager,
         fanControl,
         pressureHistory,
+        chartsHistory,
         uiController,
         currentData,
         night_mode,
@@ -138,6 +141,7 @@ void loop()
     SensorManager::PollResult sensor_poll =
         sensorManager.poll(currentData, storage, pressureHistory, co2_asc_enabled);
     uiController.onSensorPoll(sensor_poll);
+    chartsHistory.update(currentData, storage);
     networkManager.poll();
     uint32_t now = millis();
     BootPolicy::markStable(now,
