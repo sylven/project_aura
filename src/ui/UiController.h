@@ -17,6 +17,7 @@
 class StorageManager;
 class AuraNetworkManager;
 class MqttManager;
+class ChartsHistory;
 class ThemeManager;
 class BacklightManager;
 class NightModeManager;
@@ -32,6 +33,7 @@ struct UiContext {
     AuraNetworkManager &networkManager;
     MqttManager &mqttManager;
     SensorManager &sensorManager;
+    ChartsHistory &chartsHistory;
     TimeManager &timeManager;
     ThemeManager &themeManager;
     BacklightManager &backlightManager;
@@ -106,6 +108,35 @@ private:
         INFO_PRESSURE_3H,
         INFO_PRESSURE_24H,
     };
+    enum TempGraphRange {
+        TEMP_GRAPH_RANGE_1H = 0,
+        TEMP_GRAPH_RANGE_3H,
+        TEMP_GRAPH_RANGE_24H,
+    };
+    enum GraphZoneTone : uint8_t {
+        GRAPH_ZONE_NONE = 0,
+        GRAPH_ZONE_RED,
+        GRAPH_ZONE_ORANGE,
+        GRAPH_ZONE_YELLOW,
+        GRAPH_ZONE_GREEN,
+        GRAPH_ZONE_BLUE,
+    };
+    static constexpr uint8_t kMaxGraphZoneBands = 7;
+    static constexpr uint8_t kMaxGraphZoneBounds = kMaxGraphZoneBands + 1;
+    struct SensorGraphProfile {
+        float min_span = 1.0f;
+        float fallback_value = 0.0f;
+        uint8_t vertical_divisions = 15;
+        uint8_t horizontal_divisions_min = 3;
+        uint8_t horizontal_divisions_max = 12;
+        const char *unit = nullptr;
+        const char *label_min = "MIN";
+        const char *label_now = "NOW";
+        const char *label_max = "MAX";
+        uint8_t zone_count = 0;
+        float zone_bounds[kMaxGraphZoneBounds] = {};
+        GraphZoneTone zone_tones[kMaxGraphZoneBands] = {};
+    };
 
     void update_temp_offset_label();
     void update_hum_offset_label();
@@ -119,6 +150,22 @@ private:
     void select_humidity_info(InfoSensor sensor);
     void select_pm_info(InfoSensor sensor);
     void select_pressure_info(InfoSensor sensor);
+    void set_temperature_info_mode(bool graph_mode);
+    SensorGraphProfile build_temperature_graph_profile() const;
+    lv_color_t resolve_graph_zone_color(GraphZoneTone tone, lv_color_t chart_bg);
+    void apply_temperature_graph_theme(const SensorGraphProfile &profile);
+    void update_temperature_info_graph();
+    void ensure_temperature_graph_overlays();
+    void update_temperature_graph_overlays(const SensorGraphProfile &profile,
+                                           bool has_values,
+                                           float min_temp,
+                                           float max_temp,
+                                           float latest_temp);
+    void ensure_temperature_zone_overlay();
+    void update_temperature_zone_overlay(const SensorGraphProfile &profile, float y_min_display, float y_max_display);
+    void ensure_temperature_time_labels();
+    void update_temperature_time_labels();
+    uint16_t temperature_graph_points() const;
     void update_sensor_cards(const AirQuality &aq, bool gas_warmup, bool show_co2_bar);
     void update_settings_header();
     void update_theme_custom_info(bool presets);
@@ -294,6 +341,10 @@ private:
     void on_ah_info_event(lv_event_t *e);
     void on_mr_info_event(lv_event_t *e);
     void on_dp_info_event(lv_event_t *e);
+    void on_info_graph_event(lv_event_t *e);
+    void on_temp_range_1h_event(lv_event_t *e);
+    void on_temp_range_3h_event(lv_event_t *e);
+    void on_temp_range_24h_event(lv_event_t *e);
     void on_pm10_info_event(lv_event_t *e);
     void on_pm1_info_event(lv_event_t *e);
     void on_card_pm05_event(lv_event_t *e);
@@ -410,6 +461,10 @@ private:
     static void on_ah_info_event_cb(lv_event_t *e);
     static void on_mr_info_event_cb(lv_event_t *e);
     static void on_dp_info_event_cb(lv_event_t *e);
+    static void on_info_graph_event_cb(lv_event_t *e);
+    static void on_temp_range_1h_event_cb(lv_event_t *e);
+    static void on_temp_range_3h_event_cb(lv_event_t *e);
+    static void on_temp_range_24h_event_cb(lv_event_t *e);
     static void on_pm10_info_event_cb(lv_event_t *e);
     static void on_pm1_info_event_cb(lv_event_t *e);
     static void on_card_pm05_event_cb(lv_event_t *e);
@@ -446,6 +501,7 @@ private:
     AuraNetworkManager &networkManager;
     MqttManager &mqttManager;
     SensorManager &sensorManager;
+    ChartsHistory &chartsHistory;
     TimeManager &timeManager;
     ThemeManager &themeManager;
     BacklightManager &backlightManager;
@@ -529,4 +585,12 @@ private:
     uint32_t boot_release_at_ms = 0;
     bool boot_ui_released = false;
     InfoSensor info_sensor = INFO_NONE;
+    TempGraphRange temp_graph_range_ = TEMP_GRAPH_RANGE_3H;
+    bool temp_graph_mode_ = false;
+    lv_obj_t *temp_graph_label_min_ = nullptr;
+    lv_obj_t *temp_graph_label_now_ = nullptr;
+    lv_obj_t *temp_graph_label_max_ = nullptr;
+    lv_obj_t *temp_graph_zone_overlay_ = nullptr;
+    lv_obj_t *temp_graph_zone_bands_[kMaxGraphZoneBands] = {};
+    lv_obj_t *temp_graph_time_labels_[7] = {};
 };
