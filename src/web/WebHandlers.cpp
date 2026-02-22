@@ -7,6 +7,7 @@
 #include "web/WebHandlers.h"
 
 #include <math.h>
+#include <time.h>
 #include <WiFi.h>
 #include <WebServer.h>
 #include <PubSubClient.h>
@@ -1053,11 +1054,17 @@ void state_handle_data() {
     const SensorData &data = *context->sensor_data;
     WebServer &server = *context->server;
     const uint32_t uptime_s = millis() / 1000UL;
+    const time_t now_epoch = time(nullptr);
 
     ArduinoJson::JsonDocument doc;
     doc["success"] = true;
     doc["uptime_s"] = uptime_s;
     doc["timestamp_ms"] = millis();
+    if (now_epoch > 0) {
+        doc["time_epoch_s"] = static_cast<int64_t>(now_epoch);
+    } else {
+        doc["time_epoch_s"] = nullptr;
+    }
 
     ArduinoJson::JsonObject sensors = doc["sensors"].to<ArduinoJson::JsonObject>();
     json_set_float_or_null(sensors, "temp", data.temp_valid, data.temperature);

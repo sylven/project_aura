@@ -262,6 +262,7 @@ const parseStateApiPayload = (payload) => {
   const settings = payload.settings || {};
 
   return {
+    deviceTimeEpochS: finiteNumberOrNull(payload.time_epoch_s),
     current: {
       co2: finiteNumberOrNull(sensors.co2),
       temp: finiteNumberOrNull(sensors.temp),
@@ -1473,12 +1474,6 @@ function AuraDashboard() {
         const parsed = parseChartApiPayload(payload);
         setChartApiData(parsed.points);
         setChartApiLatest(parsed.latest);
-        if (typeof parsed.latestEpoch === 'number' && Number.isFinite(parsed.latestEpoch)) {
-          setDeviceClockRef({
-            epochMs: parsed.latestEpoch * 1000,
-            capturedAtMs: Date.now(),
-          });
-        }
       })
       .catch((error) => {
         if (error?.name === 'AbortError') return;
@@ -1505,12 +1500,6 @@ function AuraDashboard() {
           if (!active) return;
           const parsed = parseChartApiPayload(payload);
           setSensorHistoryData(parsed.points);
-          if (typeof parsed.latestEpoch === 'number' && Number.isFinite(parsed.latestEpoch)) {
-            setDeviceClockRef({
-              epochMs: parsed.latestEpoch * 1000,
-              capturedAtMs: Date.now(),
-            });
-          }
         })
         .catch(() => {
           // Keep last successful history to avoid flicker.
@@ -1540,6 +1529,12 @@ function AuraDashboard() {
           if (!active) return;
           const parsed = parseStateApiPayload(payload);
           setStateApi(parsed);
+          if (typeof parsed.deviceTimeEpochS === 'number' && Number.isFinite(parsed.deviceTimeEpochS)) {
+            setDeviceClockRef({
+              epochMs: parsed.deviceTimeEpochS * 1000,
+              capturedAtMs: Date.now(),
+            });
+          }
         })
         .catch(() => {});
     };
