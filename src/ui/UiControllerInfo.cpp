@@ -111,7 +111,21 @@ UiController::SensorGraphProfile UiController::build_temperature_graph_profile()
     SensorGraphProfile profile{};
     profile.min_span = temp_units_c ? 2.0f : 3.5f;
     profile.fallback_value = temp_units_c ? 22.0f : 71.6f;
-    profile.vertical_divisions = 15;
+    switch (temp_graph_range_) {
+        case TEMP_GRAPH_RANGE_1H:
+            // 0..60 min with 5 min step => 13 vertical marks
+            profile.vertical_divisions = 13;
+            break;
+        case TEMP_GRAPH_RANGE_24H:
+            // 0..24 h with 1 h step => 25 vertical marks
+            profile.vertical_divisions = 25;
+            break;
+        case TEMP_GRAPH_RANGE_3H:
+        default:
+            // 0..180 min with 15 min step => 13 vertical marks
+            profile.vertical_divisions = 13;
+            break;
+    }
     profile.horizontal_divisions_min = 3;
     profile.horizontal_divisions_max = 12;
     profile.unit = temp_units_c ? UiText::UnitC() : UiText::UnitF();
