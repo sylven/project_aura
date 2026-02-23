@@ -349,6 +349,7 @@ namespace Config {
         bool led_indicators = true;
         bool alert_blink = true;
         bool asc_enabled = true;
+        String web_display_name = "";
         Language language = Language::EN;
 
         uint32_t backlight_timeout_s = 0;

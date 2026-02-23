@@ -43,6 +43,7 @@ uint32_t g_deferred_wifi_start_sta_due_ms = 0;
 uint32_t g_deferred_mqtt_sync_due_ms = 0;
 constexpr uint32_t kChartStepS = Config::CHART_HISTORY_STEP_MS / 1000UL;
 constexpr size_t kEventsApiMaxEntries = 48;
+constexpr size_t kWebDisplayNameMaxLen = 32;
 Logger::RecentEntry g_events_snapshot[kEventsApiMaxEntries];
 bool g_ota_upload_seen = false;
 bool g_ota_upload_active = false;
@@ -348,10 +349,7 @@ void fill_web_settings_json(ArduinoJson::JsonObject settings, const WebHandlerCo
         settings["units_c"] = context.ui_controller->webUnitsC();
         settings["temp_offset"] = context.ui_controller->webTempOffset();
         settings["hum_offset"] = context.ui_controller->webHumOffset();
-        return;
-    }
-
-    if (context.storage) {
+    } else if (context.storage) {
         const auto &cfg = context.storage->config();
         settings["night_mode"] = cfg.night_mode;
         settings["night_mode_locked"] = cfg.auto_night_enabled;
@@ -359,15 +357,20 @@ void fill_web_settings_json(ArduinoJson::JsonObject settings, const WebHandlerCo
         settings["units_c"] = cfg.units_c;
         settings["temp_offset"] = cfg.temp_offset;
         settings["hum_offset"] = cfg.hum_offset;
-        return;
+    } else {
+        settings["night_mode"] = nullptr;
+        settings["night_mode_locked"] = nullptr;
+        settings["backlight_on"] = nullptr;
+        settings["units_c"] = nullptr;
+        settings["temp_offset"] = nullptr;
+        settings["hum_offset"] = nullptr;
     }
 
-    settings["night_mode"] = nullptr;
-    settings["night_mode_locked"] = nullptr;
-    settings["backlight_on"] = nullptr;
-    settings["units_c"] = nullptr;
-    settings["temp_offset"] = nullptr;
-    settings["hum_offset"] = nullptr;
+    if (context.storage) {
+        settings["display_name"] = context.storage->config().web_display_name;
+    } else {
+        settings["display_name"] = nullptr;
+    }
 }
 
 } // namespace
@@ -1303,6 +1306,32 @@ void settings_handle_update() {
         }
 
         ui.webSetOffsets(temp_offset, hum_offset);
+    }
+
+    ArduinoJson::JsonVariantConst display_name_var = doc["display_name"];
+    if (!display_name_var.isNull()) {
+        if (!display_name_var.is<const char *>()) {
+            server.send(400, "text/plain", "display_name must be string");
+            return;
+        }
+        if (!context->storage) {
+            server.send(503, "text/plain", "Storage unavailable");
+            return;
+        }
+
+        String display_name = display_name_var.as<String>();
+        display_name.trim();
+        if (display_name.length() > kWebDisplayNameMaxLen) {
+            server.send(400, "text/plain", "display_name is too long");
+            return;
+        }
+        if (has_control_chars(display_name)) {
+            server.send(400, "text/plain", "display_name contains invalid characters");
+            return;
+        }
+
+        context->storage->config().web_display_name = display_name;
+        context->storage->saveConfig(true);
     }
 
     bool restart_requested = false;
