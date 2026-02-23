@@ -115,6 +115,12 @@ void UiEventBinder::bindAvailableEvents(UiController &owner, int screen_id) {
         {objects.btn_co2_range_1h, UiController::on_co2_range_1h_event_cb, LV_EVENT_CLICKED},
         {objects.btn_co2_range_3h, UiController::on_co2_range_3h_event_cb, LV_EVENT_CLICKED},
         {objects.btn_co2_range_24h, UiController::on_co2_range_24h_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_pm05_range_1h, UiController::on_pm05_range_1h_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_pm05_range_3h, UiController::on_pm05_range_3h_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_pm05_range_24h, UiController::on_pm05_range_24h_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_pm1_10_range_1h, UiController::on_pm1_10_range_1h_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_pm1_10_range_3h, UiController::on_pm1_10_range_3h_event_cb, LV_EVENT_CLICKED},
+        {objects.btn_pm1_10_range_24h, UiController::on_pm1_10_range_24h_event_cb, LV_EVENT_CLICKED},
         {objects.btn_co_range_1h, UiController::on_co_range_1h_event_cb, LV_EVENT_CLICKED},
         {objects.btn_co_range_3h, UiController::on_co_range_3h_event_cb, LV_EVENT_CLICKED},
         {objects.btn_co_range_24h, UiController::on_co_range_24h_event_cb, LV_EVENT_CLICKED},
@@ -140,6 +146,12 @@ void UiEventBinder::bindAvailableEvents(UiController &owner, int screen_id) {
         {objects.btn_co2_range_1h, UiController::on_co2_range_1h_event_cb, LV_EVENT_SHORT_CLICKED},
         {objects.btn_co2_range_3h, UiController::on_co2_range_3h_event_cb, LV_EVENT_SHORT_CLICKED},
         {objects.btn_co2_range_24h, UiController::on_co2_range_24h_event_cb, LV_EVENT_SHORT_CLICKED},
+        {objects.btn_pm05_range_1h, UiController::on_pm05_range_1h_event_cb, LV_EVENT_SHORT_CLICKED},
+        {objects.btn_pm05_range_3h, UiController::on_pm05_range_3h_event_cb, LV_EVENT_SHORT_CLICKED},
+        {objects.btn_pm05_range_24h, UiController::on_pm05_range_24h_event_cb, LV_EVENT_SHORT_CLICKED},
+        {objects.btn_pm1_10_range_1h, UiController::on_pm1_10_range_1h_event_cb, LV_EVENT_SHORT_CLICKED},
+        {objects.btn_pm1_10_range_3h, UiController::on_pm1_10_range_3h_event_cb, LV_EVENT_SHORT_CLICKED},
+        {objects.btn_pm1_10_range_24h, UiController::on_pm1_10_range_24h_event_cb, LV_EVENT_SHORT_CLICKED},
         {objects.btn_co_range_1h, UiController::on_co_range_1h_event_cb, LV_EVENT_SHORT_CLICKED},
         {objects.btn_co_range_3h, UiController::on_co_range_3h_event_cb, LV_EVENT_SHORT_CLICKED},
         {objects.btn_co_range_24h, UiController::on_co_range_24h_event_cb, LV_EVENT_SHORT_CLICKED},
@@ -255,6 +267,12 @@ void UiEventBinder::bindAvailableEvents(UiController &owner, int screen_id) {
         {objects.btn_co2_range_1h, UiController::on_co2_range_1h_event_cb, LV_EVENT_VALUE_CHANGED},
         {objects.btn_co2_range_3h, UiController::on_co2_range_3h_event_cb, LV_EVENT_VALUE_CHANGED},
         {objects.btn_co2_range_24h, UiController::on_co2_range_24h_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_pm05_range_1h, UiController::on_pm05_range_1h_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_pm05_range_3h, UiController::on_pm05_range_3h_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_pm05_range_24h, UiController::on_pm05_range_24h_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_pm1_10_range_1h, UiController::on_pm1_10_range_1h_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_pm1_10_range_3h, UiController::on_pm1_10_range_3h_event_cb, LV_EVENT_VALUE_CHANGED},
+        {objects.btn_pm1_10_range_24h, UiController::on_pm1_10_range_24h_event_cb, LV_EVENT_VALUE_CHANGED},
         {objects.btn_co_range_1h, UiController::on_co_range_1h_event_cb, LV_EVENT_VALUE_CHANGED},
         {objects.btn_co_range_3h, UiController::on_co_range_3h_event_cb, LV_EVENT_VALUE_CHANGED},
         {objects.btn_co_range_24h, UiController::on_co_range_24h_event_cb, LV_EVENT_VALUE_CHANGED},
@@ -369,6 +387,12 @@ void UiEventBinder::applyToggleStylesForAvailableObjects(UiController &owner, in
         objects.btn_co2_range_1h,
         objects.btn_co2_range_3h,
         objects.btn_co2_range_24h,
+        objects.btn_pm05_range_1h,
+        objects.btn_pm05_range_3h,
+        objects.btn_pm05_range_24h,
+        objects.btn_pm1_10_range_1h,
+        objects.btn_pm1_10_range_3h,
+        objects.btn_pm1_10_range_24h,
         objects.btn_co_range_1h,
         objects.btn_co_range_3h,
         objects.btn_co_range_24h,
@@ -452,6 +476,8 @@ void UiEventBinder::applyCheckedStatesForAvailableObjects(UiController &owner, i
         ((owner.info_sensor == UiController::INFO_NOX) && owner.nox_graph_mode_) ||
         ((owner.info_sensor == UiController::INFO_HCHO) && owner.hcho_graph_mode_) ||
         ((owner.info_sensor == UiController::INFO_CO2) && owner.co2_graph_mode_) ||
+        ((owner.info_sensor == UiController::INFO_PM05) && owner.pm05_graph_mode_) ||
+        (((owner.info_sensor == UiController::INFO_PM1) || (owner.info_sensor == UiController::INFO_PM10)) && owner.pm1_10_graph_mode_) ||
         ((owner.info_sensor == UiController::INFO_CO) && owner.co_graph_mode_) ||
         (pressure_info_selected && owner.pressure_graph_mode_);
     set_checked(objects.btn_info_graph, info_graph_checked);
@@ -473,6 +499,12 @@ void UiEventBinder::applyCheckedStatesForAvailableObjects(UiController &owner, i
     set_checked(objects.btn_co2_range_1h, owner.co2_graph_range_ == UiController::TEMP_GRAPH_RANGE_1H);
     set_checked(objects.btn_co2_range_3h, owner.co2_graph_range_ == UiController::TEMP_GRAPH_RANGE_3H);
     set_checked(objects.btn_co2_range_24h, owner.co2_graph_range_ == UiController::TEMP_GRAPH_RANGE_24H);
+    set_checked(objects.btn_pm05_range_1h, owner.pm05_graph_range_ == UiController::TEMP_GRAPH_RANGE_1H);
+    set_checked(objects.btn_pm05_range_3h, owner.pm05_graph_range_ == UiController::TEMP_GRAPH_RANGE_3H);
+    set_checked(objects.btn_pm05_range_24h, owner.pm05_graph_range_ == UiController::TEMP_GRAPH_RANGE_24H);
+    set_checked(objects.btn_pm1_10_range_1h, owner.pm1_10_graph_range_ == UiController::TEMP_GRAPH_RANGE_1H);
+    set_checked(objects.btn_pm1_10_range_3h, owner.pm1_10_graph_range_ == UiController::TEMP_GRAPH_RANGE_3H);
+    set_checked(objects.btn_pm1_10_range_24h, owner.pm1_10_graph_range_ == UiController::TEMP_GRAPH_RANGE_24H);
     set_checked(objects.btn_co_range_1h, owner.co_graph_range_ == UiController::TEMP_GRAPH_RANGE_1H);
     set_checked(objects.btn_co_range_3h, owner.co_graph_range_ == UiController::TEMP_GRAPH_RANGE_3H);
     set_checked(objects.btn_co_range_24h, owner.co_graph_range_ == UiController::TEMP_GRAPH_RANGE_24H);

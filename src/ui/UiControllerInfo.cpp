@@ -260,6 +260,10 @@ void UiController::update_sensor_info_ui() {
             safe_label_set_text(objects.label_sensor_info_unit, unit);
             lv_color_t pm05_col = currentData.pm05_valid ? getPM05Color(currentData.pm05) : color_inactive();
             set_dot_color(objects.dot_sensor_info, alert_color_for_mode(pm05_col));
+            set_pm05_info_mode(pm05_graph_mode_);
+            if (pm05_graph_mode_) {
+                update_pm05_info_graph();
+            }
             break;
         }
         case INFO_PM25: {
@@ -300,6 +304,10 @@ void UiController::update_sensor_info_ui() {
             safe_label_set_text(objects.label_sensor_info_unit, unit);
             lv_color_t pm10_col = currentData.pm10_valid ? getPM10Color(currentData.pm10) : color_inactive();
             set_dot_color(objects.dot_sensor_info, alert_color_for_mode(pm10_col));
+            set_pm1_10_info_mode(pm1_10_graph_mode_);
+            if (pm1_10_graph_mode_) {
+                update_pm1_10_info_graph();
+            }
             break;
         }
         case INFO_PM1: {
@@ -318,6 +326,10 @@ void UiController::update_sensor_info_ui() {
             safe_label_set_text(objects.label_sensor_info_unit, unit);
             lv_color_t pm1_col = pm1_available ? getPM1Color(currentData.pm1) : color_inactive();
             set_dot_color(objects.dot_sensor_info, alert_color_for_mode(pm1_col));
+            set_pm1_10_info_mode(pm1_10_graph_mode_);
+            if (pm1_10_graph_mode_) {
+                update_pm1_10_info_graph();
+            }
             break;
         }
         case INFO_CO: {
@@ -583,6 +595,14 @@ void UiController::select_pm_info(InfoSensor sensor) {
     set_visible(objects.pm25_info, sensor == INFO_PM25);
     set_visible(objects.pm10_info, sensor == INFO_PM10);
     set_visible(objects.pm1_info, sensor == INFO_PM1);
+    set_visible(objects.pm05_info_graph, false);
+    set_visible(objects.pm1_10_info_graph, false);
+    set_visible(objects.pm05_info_thresholds, sensor == INFO_PM05);
+    set_visible(objects.pm1_info_thresholds, sensor == INFO_PM1);
+    set_visible(objects.pm10_info_thresholds, sensor == INFO_PM10);
+    if (sensor == INFO_PM05) {
+        set_pm05_info_mode(pm05_graph_mode_);
+    }
     if (pm1_pm10_group) {
         auto set_checked = [](lv_obj_t *btn, bool checked) {
             if (!btn) return;
@@ -594,6 +614,7 @@ void UiController::select_pm_info(InfoSensor sensor) {
         // Keep PM tab buttons above PM1/PM10 content layers so they remain clickable.
         if (objects.btn_pm10_info) lv_obj_move_foreground(objects.btn_pm10_info);
         if (objects.btn_pm1_info) lv_obj_move_foreground(objects.btn_pm1_info);
+        set_pm1_10_info_mode(pm1_10_graph_mode_);
     }
 
     if (objects.label_sensor_info_title) {
@@ -682,9 +703,14 @@ void UiController::hide_all_sensor_info_containers() {
     set_visible(objects.pressure_info_graph, false);
     set_visible(objects.pm_info, false);
     set_visible(objects.pm1_pm10_info, false);
+    set_visible(objects.pm1_10_info_graph, false);
     set_visible(objects.pm05_info, false);
+    set_visible(objects.pm05_info_thresholds, false);
+    set_visible(objects.pm05_info_graph, false);
     set_visible(objects.pm10_info, false);
+    set_visible(objects.pm10_info_thresholds, false);
     set_visible(objects.pm25_info, false);
     set_visible(objects.pm1_info, false);
+    set_visible(objects.pm1_info_thresholds, false);
 }
 

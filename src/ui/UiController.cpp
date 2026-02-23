@@ -1489,6 +1489,30 @@ void UiController::init_ui_defaults() {
         lv_obj_add_flag(objects.btn_hcho_range_24h, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_CHECKABLE);
         lv_obj_set_ext_click_area(objects.btn_hcho_range_24h, 12);
     }
+    if (objects.btn_pm05_range_1h) {
+        lv_obj_add_flag(objects.btn_pm05_range_1h, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_CHECKABLE);
+        lv_obj_set_ext_click_area(objects.btn_pm05_range_1h, 12);
+    }
+    if (objects.btn_pm05_range_3h) {
+        lv_obj_add_flag(objects.btn_pm05_range_3h, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_CHECKABLE);
+        lv_obj_set_ext_click_area(objects.btn_pm05_range_3h, 12);
+    }
+    if (objects.btn_pm05_range_24h) {
+        lv_obj_add_flag(objects.btn_pm05_range_24h, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_CHECKABLE);
+        lv_obj_set_ext_click_area(objects.btn_pm05_range_24h, 12);
+    }
+    if (objects.btn_pm1_10_range_1h) {
+        lv_obj_add_flag(objects.btn_pm1_10_range_1h, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_CHECKABLE);
+        lv_obj_set_ext_click_area(objects.btn_pm1_10_range_1h, 12);
+    }
+    if (objects.btn_pm1_10_range_3h) {
+        lv_obj_add_flag(objects.btn_pm1_10_range_3h, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_CHECKABLE);
+        lv_obj_set_ext_click_area(objects.btn_pm1_10_range_3h, 12);
+    }
+    if (objects.btn_pm1_10_range_24h) {
+        lv_obj_add_flag(objects.btn_pm1_10_range_24h, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_CHECKABLE);
+        lv_obj_set_ext_click_area(objects.btn_pm1_10_range_24h, 12);
+    }
     if (objects.btn_co_range_1h) {
         lv_obj_add_flag(objects.btn_co_range_1h, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_CHECKABLE);
         lv_obj_set_ext_click_area(objects.btn_co_range_1h, 12);
