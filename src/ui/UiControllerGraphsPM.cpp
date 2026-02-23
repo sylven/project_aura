@@ -64,6 +64,9 @@ void UiController::ensure_pm05_zone_overlay() {
         return;
     }
 
+    lv_obj_update_layout(objects.pm05_info_graph);
+    lv_obj_update_layout(objects.chart_pm05_info);
+
     if (!pm05_graph_zone_overlay_ || !lv_obj_is_valid(pm05_graph_zone_overlay_) ||
         lv_obj_get_parent(pm05_graph_zone_overlay_) != objects.pm05_info_graph) {
         pm05_graph_zone_overlay_ = lv_obj_create(objects.pm05_info_graph);
@@ -83,6 +86,7 @@ void UiController::ensure_pm05_zone_overlay() {
 
     lv_obj_set_pos(pm05_graph_zone_overlay_, chart_x, chart_y);
     lv_obj_set_size(pm05_graph_zone_overlay_, chart_w, chart_h);
+    lv_obj_update_layout(pm05_graph_zone_overlay_);
     lv_obj_set_style_radius(pm05_graph_zone_overlay_,
                             lv_obj_get_style_radius(objects.chart_pm05_info, LV_PART_MAIN),
                             LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -99,6 +103,7 @@ void UiController::ensure_pm05_zone_overlay() {
             lv_obj_set_style_pad_top(band, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_pad_bottom(band, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
         }
+        lv_obj_move_background(band);
     }
 
     lv_obj_move_background(pm05_graph_zone_overlay_);
@@ -122,16 +127,25 @@ void UiController::update_pm05_zone_overlay(float y_min_display, float y_max_dis
         return;
     }
 
-    constexpr float kZoneBounds[] = {-100000.0f, 250.0f, 600.0f, 1200.0f, 100000.0f};
+    constexpr float kZoneBounds[] = {
+        -100000.0f,
+        Config::AQ_PM05_GREEN_MAX_PPCM3,
+        Config::AQ_PM05_YELLOW_MAX_PPCM3,
+        Config::AQ_PM05_ORANGE_MAX_PPCM3,
+        100000.0f};
     constexpr GraphZoneTone kZoneTones[] = {GRAPH_ZONE_GREEN, GRAPH_ZONE_YELLOW, GRAPH_ZONE_ORANGE, GRAPH_ZONE_RED};
     constexpr uint8_t kZoneCount = 4;
 
     const lv_color_t chart_bg = lv_obj_get_style_bg_color(objects.chart_pm05_info, LV_PART_MAIN);
     const float span = y_max_display - y_min_display;
 
-    for (uint8_t i = 0; i < kZoneCount; ++i) {
+    for (uint8_t i = 0; i < kMaxGraphZoneBands; ++i) {
         lv_obj_t *band = pm05_graph_zone_bands_[i];
         if (!band) {
+            continue;
+        }
+        if (i >= kZoneCount) {
+            lv_obj_add_flag(band, LV_OBJ_FLAG_HIDDEN);
             continue;
         }
 
@@ -164,13 +178,7 @@ void UiController::update_pm05_zone_overlay(float y_min_display, float y_max_dis
         lv_obj_set_style_bg_color(band, resolve_graph_zone_color(kZoneTones[i], chart_bg), LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_set_style_bg_opa(band, LV_OPA_30, LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_clear_flag(band, LV_OBJ_FLAG_HIDDEN);
-    }
-
-    for (uint8_t i = kZoneCount; i < kMaxGraphZoneBands; ++i) {
-        lv_obj_t *band = pm05_graph_zone_bands_[i];
-        if (band) {
-            lv_obj_add_flag(band, LV_OBJ_FLAG_HIDDEN);
-        }
+        lv_obj_move_background(band);
     }
 }
 
@@ -179,7 +187,7 @@ void UiController::ensure_pm05_time_labels() {
         objects.pm05_info_graph,
         objects.chart_pm05_info,
         pm05_graph_time_labels_,
-        kTempGraphTimeTickCount);
+        kGraphTimeTickCount);
 }
 
 void UiController::update_pm05_time_labels() {
@@ -187,7 +195,7 @@ void UiController::update_pm05_time_labels() {
         objects.pm05_info_graph,
         objects.chart_pm05_info,
         pm05_graph_time_labels_,
-        kTempGraphTimeTickCount,
+        kGraphTimeTickCount,
         pm05_graph_points(),
         true,
         true,
@@ -280,6 +288,7 @@ void UiController::update_pm05_info_graph() {
     update_pm05_time_labels();
 
     lv_chart_refresh(objects.chart_pm05_info);
+    mark_active_graph_refreshed(INFO_PM05, pm05_graph_range_, points);
 }
 
 void UiController::ensure_pm25_4_graph_overlays() {
@@ -328,6 +337,9 @@ void UiController::ensure_pm25_4_zone_overlay() {
         return;
     }
 
+    lv_obj_update_layout(objects.pm25_4_graph);
+    lv_obj_update_layout(objects.chart_pm25_4_graph);
+
     if (!pm25_4_graph_zone_overlay_ || !lv_obj_is_valid(pm25_4_graph_zone_overlay_) ||
         lv_obj_get_parent(pm25_4_graph_zone_overlay_) != objects.pm25_4_graph) {
         pm25_4_graph_zone_overlay_ = lv_obj_create(objects.pm25_4_graph);
@@ -347,6 +359,7 @@ void UiController::ensure_pm25_4_zone_overlay() {
 
     lv_obj_set_pos(pm25_4_graph_zone_overlay_, chart_x, chart_y);
     lv_obj_set_size(pm25_4_graph_zone_overlay_, chart_w, chart_h);
+    lv_obj_update_layout(pm25_4_graph_zone_overlay_);
     lv_obj_set_style_radius(pm25_4_graph_zone_overlay_,
                             lv_obj_get_style_radius(objects.chart_pm25_4_graph, LV_PART_MAIN),
                             LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -472,7 +485,7 @@ void UiController::ensure_pm25_4_time_labels() {
         objects.pm25_4_graph,
         objects.chart_pm25_4_graph,
         pm25_4_graph_time_labels_,
-        kTempGraphTimeTickCount);
+        kGraphTimeTickCount);
 }
 
 void UiController::update_pm25_4_time_labels() {
@@ -480,7 +493,7 @@ void UiController::update_pm25_4_time_labels() {
         objects.pm25_4_graph,
         objects.chart_pm25_4_graph,
         pm25_4_graph_time_labels_,
-        kTempGraphTimeTickCount,
+        kGraphTimeTickCount,
         pm25_4_graph_points());
 }
 
@@ -572,6 +585,7 @@ void UiController::update_pm25_4_info_graph() {
     update_pm25_4_time_labels();
 
     lv_chart_refresh(objects.chart_pm25_4_graph);
+    mark_active_graph_refreshed(info_sensor, pm25_4_graph_range_, points);
 }
 
 void UiController::ensure_pm1_10_graph_overlays() {
@@ -620,6 +634,9 @@ void UiController::ensure_pm1_10_zone_overlay() {
         return;
     }
 
+    lv_obj_update_layout(objects.pm1_10_info_graph);
+    lv_obj_update_layout(objects.chart_pm1_10_info);
+
     if (!pm1_10_graph_zone_overlay_ || !lv_obj_is_valid(pm1_10_graph_zone_overlay_) ||
         lv_obj_get_parent(pm1_10_graph_zone_overlay_) != objects.pm1_10_info_graph) {
         pm1_10_graph_zone_overlay_ = lv_obj_create(objects.pm1_10_info_graph);
@@ -639,6 +656,7 @@ void UiController::ensure_pm1_10_zone_overlay() {
 
     lv_obj_set_pos(pm1_10_graph_zone_overlay_, chart_x, chart_y);
     lv_obj_set_size(pm1_10_graph_zone_overlay_, chart_w, chart_h);
+    lv_obj_update_layout(pm1_10_graph_zone_overlay_);
     lv_obj_set_style_radius(pm1_10_graph_zone_overlay_,
                             lv_obj_get_style_radius(objects.chart_pm1_10_info, LV_PART_MAIN),
                             LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -679,8 +697,18 @@ void UiController::update_pm1_10_zone_overlay(float y_min_display, float y_max_d
         return;
     }
 
-    static const float kPm1ZoneBounds[] = {-1000.0f, 10.0f, 25.0f, 50.0f, 100000.0f};
-    static const float kPm10ZoneBounds[] = {-1000.0f, 54.0f, 154.0f, 254.0f, 100000.0f};
+    static const float kPm1ZoneBounds[] = {
+        -1000.0f,
+        Config::AQ_PM1_GREEN_MAX_UGM3,
+        Config::AQ_PM1_YELLOW_MAX_UGM3,
+        Config::AQ_PM1_ORANGE_MAX_UGM3,
+        100000.0f};
+    static const float kPm10ZoneBounds[] = {
+        -1000.0f,
+        Config::AQ_PM10_GREEN_MAX_UGM3,
+        Config::AQ_PM10_YELLOW_MAX_UGM3,
+        Config::AQ_PM10_ORANGE_MAX_UGM3,
+        100000.0f};
     static const GraphZoneTone kPmZoneTones[] = {
         GRAPH_ZONE_GREEN,
         GRAPH_ZONE_YELLOW,
@@ -752,7 +780,7 @@ void UiController::ensure_pm1_10_time_labels() {
         objects.pm1_10_info_graph,
         objects.chart_pm1_10_info,
         pm1_10_graph_time_labels_,
-        kTempGraphTimeTickCount);
+        kGraphTimeTickCount);
 }
 
 void UiController::update_pm1_10_time_labels() {
@@ -760,7 +788,7 @@ void UiController::update_pm1_10_time_labels() {
         objects.pm1_10_info_graph,
         objects.chart_pm1_10_info,
         pm1_10_graph_time_labels_,
-        kTempGraphTimeTickCount,
+        kGraphTimeTickCount,
         pm1_10_graph_points());
 }
 
@@ -852,5 +880,6 @@ void UiController::update_pm1_10_info_graph() {
     update_pm1_10_time_labels();
 
     lv_chart_refresh(objects.chart_pm1_10_info);
+    mark_active_graph_refreshed(info_sensor, pm1_10_graph_range_, points);
 }
 

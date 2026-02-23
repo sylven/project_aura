@@ -64,6 +64,9 @@ void UiController::ensure_voc_zone_overlay() {
         return;
     }
 
+    lv_obj_update_layout(objects.voc_info_graph);
+    lv_obj_update_layout(objects.chart_voc_info);
+
     if (!voc_graph_zone_overlay_ || !lv_obj_is_valid(voc_graph_zone_overlay_) ||
         lv_obj_get_parent(voc_graph_zone_overlay_) != objects.voc_info_graph) {
         voc_graph_zone_overlay_ = lv_obj_create(objects.voc_info_graph);
@@ -83,6 +86,7 @@ void UiController::ensure_voc_zone_overlay() {
 
     lv_obj_set_pos(voc_graph_zone_overlay_, chart_x, chart_y);
     lv_obj_set_size(voc_graph_zone_overlay_, chart_w, chart_h);
+    lv_obj_update_layout(voc_graph_zone_overlay_);
     lv_obj_set_style_radius(voc_graph_zone_overlay_,
                             lv_obj_get_style_radius(objects.chart_voc_info, LV_PART_MAIN),
                             LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -198,7 +202,7 @@ void UiController::ensure_voc_time_labels() {
         objects.voc_info_graph,
         objects.chart_voc_info,
         voc_graph_time_labels_,
-        kTempGraphTimeTickCount);
+        kGraphTimeTickCount);
 }
 
 void UiController::update_voc_time_labels() {
@@ -206,7 +210,7 @@ void UiController::update_voc_time_labels() {
         objects.voc_info_graph,
         objects.chart_voc_info,
         voc_graph_time_labels_,
-        kTempGraphTimeTickCount,
+        kGraphTimeTickCount,
         voc_graph_points());
 }
 
@@ -290,6 +294,7 @@ void UiController::update_voc_info_graph() {
     update_voc_time_labels();
 
     lv_chart_refresh(objects.chart_voc_info);
+    mark_active_graph_refreshed(INFO_VOC, voc_graph_range_, points);
 }
 
 void UiController::ensure_nox_graph_overlays() {
@@ -338,6 +343,9 @@ void UiController::ensure_nox_zone_overlay() {
         return;
     }
 
+    lv_obj_update_layout(objects.nox_info_graph);
+    lv_obj_update_layout(objects.chart_nox_info);
+
     if (!nox_graph_zone_overlay_ || !lv_obj_is_valid(nox_graph_zone_overlay_) ||
         lv_obj_get_parent(nox_graph_zone_overlay_) != objects.nox_info_graph) {
         nox_graph_zone_overlay_ = lv_obj_create(objects.nox_info_graph);
@@ -357,6 +365,7 @@ void UiController::ensure_nox_zone_overlay() {
 
     lv_obj_set_pos(nox_graph_zone_overlay_, chart_x, chart_y);
     lv_obj_set_size(nox_graph_zone_overlay_, chart_w, chart_h);
+    lv_obj_update_layout(nox_graph_zone_overlay_);
     lv_obj_set_style_radius(nox_graph_zone_overlay_,
                             lv_obj_get_style_radius(objects.chart_nox_info, LV_PART_MAIN),
                             LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -472,7 +481,7 @@ void UiController::ensure_nox_time_labels() {
         objects.nox_info_graph,
         objects.chart_nox_info,
         nox_graph_time_labels_,
-        kTempGraphTimeTickCount);
+        kGraphTimeTickCount);
 }
 
 void UiController::update_nox_time_labels() {
@@ -480,7 +489,7 @@ void UiController::update_nox_time_labels() {
         objects.nox_info_graph,
         objects.chart_nox_info,
         nox_graph_time_labels_,
-        kTempGraphTimeTickCount,
+        kGraphTimeTickCount,
         nox_graph_points());
 }
 
@@ -564,6 +573,7 @@ void UiController::update_nox_info_graph() {
     update_nox_time_labels();
 
     lv_chart_refresh(objects.chart_nox_info);
+    mark_active_graph_refreshed(INFO_NOX, nox_graph_range_, points);
 }
 
 void UiController::ensure_hcho_graph_overlays() {
@@ -612,6 +622,9 @@ void UiController::ensure_hcho_zone_overlay() {
         return;
     }
 
+    lv_obj_update_layout(objects.hcho_info_graph);
+    lv_obj_update_layout(objects.chart_hcho_info);
+
     if (!hcho_graph_zone_overlay_ || !lv_obj_is_valid(hcho_graph_zone_overlay_) ||
         lv_obj_get_parent(hcho_graph_zone_overlay_) != objects.hcho_info_graph) {
         hcho_graph_zone_overlay_ = lv_obj_create(objects.hcho_info_graph);
@@ -631,6 +644,7 @@ void UiController::ensure_hcho_zone_overlay() {
 
     lv_obj_set_pos(hcho_graph_zone_overlay_, chart_x, chart_y);
     lv_obj_set_size(hcho_graph_zone_overlay_, chart_w, chart_h);
+    lv_obj_update_layout(hcho_graph_zone_overlay_);
     lv_obj_set_style_radius(hcho_graph_zone_overlay_,
                             lv_obj_get_style_radius(objects.chart_hcho_info, LV_PART_MAIN),
                             LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -673,9 +687,9 @@ void UiController::update_hcho_zone_overlay(float y_min_display, float y_max_dis
 
     static const float kHchoZoneBounds[] = {
         -1000.0f,
-        30.0f,
-        60.0f,
-        100.0f,
+        Config::AQ_HCHO_GREEN_MAX_PPB,
+        Config::AQ_HCHO_YELLOW_MAX_PPB,
+        Config::AQ_HCHO_ORANGE_MAX_PPB,
         100000.0f};
     static const GraphZoneTone kHchoZoneTones[] = {
         GRAPH_ZONE_GREEN,
@@ -746,7 +760,7 @@ void UiController::ensure_hcho_time_labels() {
         objects.hcho_info_graph,
         objects.chart_hcho_info,
         hcho_graph_time_labels_,
-        kTempGraphTimeTickCount);
+        kGraphTimeTickCount);
 }
 
 void UiController::update_hcho_time_labels() {
@@ -754,7 +768,7 @@ void UiController::update_hcho_time_labels() {
         objects.hcho_info_graph,
         objects.chart_hcho_info,
         hcho_graph_time_labels_,
-        kTempGraphTimeTickCount,
+        kGraphTimeTickCount,
         hcho_graph_points());
 }
 
@@ -841,6 +855,7 @@ void UiController::update_hcho_info_graph() {
     update_hcho_time_labels();
 
     lv_chart_refresh(objects.chart_hcho_info);
+    mark_active_graph_refreshed(INFO_HCHO, hcho_graph_range_, points);
 }
 
 void UiController::ensure_co2_graph_overlays() {
@@ -889,6 +904,9 @@ void UiController::ensure_co2_zone_overlay() {
         return;
     }
 
+    lv_obj_update_layout(objects.co2_info_graph);
+    lv_obj_update_layout(objects.chart_co2_info);
+
     if (!co2_graph_zone_overlay_ || !lv_obj_is_valid(co2_graph_zone_overlay_) ||
         lv_obj_get_parent(co2_graph_zone_overlay_) != objects.co2_info_graph) {
         co2_graph_zone_overlay_ = lv_obj_create(objects.co2_info_graph);
@@ -908,6 +926,7 @@ void UiController::ensure_co2_zone_overlay() {
 
     lv_obj_set_pos(co2_graph_zone_overlay_, chart_x, chart_y);
     lv_obj_set_size(co2_graph_zone_overlay_, chart_w, chart_h);
+    lv_obj_update_layout(co2_graph_zone_overlay_);
     lv_obj_set_style_radius(co2_graph_zone_overlay_,
                             lv_obj_get_style_radius(objects.chart_co2_info, LV_PART_MAIN),
                             LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -948,7 +967,12 @@ void UiController::update_co2_zone_overlay(float y_min_display, float y_max_disp
         return;
     }
 
-    static const float kCo2ZoneBounds[] = {-1000.0f, 800.0f, 1000.0f, 1500.0f, 100000.0f};
+    static const float kCo2ZoneBounds[] = {
+        -1000.0f,
+        Config::AQ_CO2_GREEN_MAX_PPM,
+        Config::AQ_CO2_YELLOW_MAX_PPM,
+        Config::AQ_CO2_ORANGE_MAX_PPM,
+        100000.0f};
     static const GraphZoneTone kCo2ZoneTones[] = {
         GRAPH_ZONE_GREEN,
         GRAPH_ZONE_YELLOW,
@@ -1018,7 +1042,7 @@ void UiController::ensure_co2_time_labels() {
         objects.co2_info_graph,
         objects.chart_co2_info,
         co2_graph_time_labels_,
-        kTempGraphTimeTickCount);
+        kGraphTimeTickCount);
 }
 
 void UiController::update_co2_time_labels() {
@@ -1026,7 +1050,7 @@ void UiController::update_co2_time_labels() {
         objects.co2_info_graph,
         objects.chart_co2_info,
         co2_graph_time_labels_,
-        kTempGraphTimeTickCount,
+        kGraphTimeTickCount,
         co2_graph_points());
 }
 
@@ -1110,6 +1134,7 @@ void UiController::update_co2_info_graph() {
     update_co2_time_labels();
 
     lv_chart_refresh(objects.chart_co2_info);
+    mark_active_graph_refreshed(INFO_CO2, co2_graph_range_, points);
 }
 
 void UiController::ensure_co_graph_overlays() {
@@ -1158,6 +1183,9 @@ void UiController::ensure_co_zone_overlay() {
         return;
     }
 
+    lv_obj_update_layout(objects.co_info_graph);
+    lv_obj_update_layout(objects.chart_co_info);
+
     if (!co_graph_zone_overlay_ || !lv_obj_is_valid(co_graph_zone_overlay_) ||
         lv_obj_get_parent(co_graph_zone_overlay_) != objects.co_info_graph) {
         co_graph_zone_overlay_ = lv_obj_create(objects.co_info_graph);
@@ -1177,6 +1205,7 @@ void UiController::ensure_co_zone_overlay() {
 
     lv_obj_set_pos(co_graph_zone_overlay_, chart_x, chart_y);
     lv_obj_set_size(co_graph_zone_overlay_, chart_w, chart_h);
+    lv_obj_update_layout(co_graph_zone_overlay_);
     lv_obj_set_style_radius(co_graph_zone_overlay_,
                             lv_obj_get_style_radius(objects.chart_co_info, LV_PART_MAIN),
                             LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -1293,7 +1322,7 @@ void UiController::ensure_co_time_labels() {
         objects.co_info_graph,
         objects.chart_co_info,
         co_graph_time_labels_,
-        kTempGraphTimeTickCount);
+        kGraphTimeTickCount);
 }
 
 void UiController::update_co_time_labels() {
@@ -1301,7 +1330,7 @@ void UiController::update_co_time_labels() {
         objects.co_info_graph,
         objects.chart_co_info,
         co_graph_time_labels_,
-        kTempGraphTimeTickCount,
+        kGraphTimeTickCount,
         co_graph_points());
 }
 
@@ -1389,5 +1418,6 @@ void UiController::update_co_info_graph() {
     update_co_time_labels();
 
     lv_chart_refresh(objects.chart_co_info);
+    mark_active_graph_refreshed(INFO_CO, co_graph_range_, points);
 }
 

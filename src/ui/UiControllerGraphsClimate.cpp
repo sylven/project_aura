@@ -86,6 +86,9 @@ void UiController::ensure_temperature_zone_overlay() {
         return;
     }
 
+    lv_obj_update_layout(objects.temperature_info_graph);
+    lv_obj_update_layout(objects.chart_temp_info);
+
     if (!temp_graph_zone_overlay_ || !lv_obj_is_valid(temp_graph_zone_overlay_) ||
         lv_obj_get_parent(temp_graph_zone_overlay_) != objects.temperature_info_graph) {
         temp_graph_zone_overlay_ = lv_obj_create(objects.temperature_info_graph);
@@ -105,6 +108,7 @@ void UiController::ensure_temperature_zone_overlay() {
 
     lv_obj_set_pos(temp_graph_zone_overlay_, chart_x, chart_y);
     lv_obj_set_size(temp_graph_zone_overlay_, chart_w, chart_h);
+    lv_obj_update_layout(temp_graph_zone_overlay_);
     lv_obj_set_style_radius(temp_graph_zone_overlay_,
                             lv_obj_get_style_radius(objects.chart_temp_info, LV_PART_MAIN),
                             LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -219,7 +223,7 @@ void UiController::ensure_temperature_time_labels() {
         objects.temperature_info_graph,
         objects.chart_temp_info,
         temp_graph_time_labels_,
-        kTempGraphTimeTickCount);
+        kGraphTimeTickCount);
 }
 
 void UiController::update_temperature_time_labels() {
@@ -227,7 +231,7 @@ void UiController::update_temperature_time_labels() {
         objects.temperature_info_graph,
         objects.chart_temp_info,
         temp_graph_time_labels_,
-        kTempGraphTimeTickCount,
+        kGraphTimeTickCount,
         temperature_graph_points());
 }
 
@@ -281,6 +285,9 @@ void UiController::ensure_humidity_zone_overlay() {
         return;
     }
 
+    lv_obj_update_layout(objects.rh_info_graph);
+    lv_obj_update_layout(objects.chart_rh_info);
+
     if (!rh_graph_zone_overlay_ || !lv_obj_is_valid(rh_graph_zone_overlay_) ||
         lv_obj_get_parent(rh_graph_zone_overlay_) != objects.rh_info_graph) {
         rh_graph_zone_overlay_ = lv_obj_create(objects.rh_info_graph);
@@ -300,6 +307,7 @@ void UiController::ensure_humidity_zone_overlay() {
 
     lv_obj_set_pos(rh_graph_zone_overlay_, chart_x, chart_y);
     lv_obj_set_size(rh_graph_zone_overlay_, chart_w, chart_h);
+    lv_obj_update_layout(rh_graph_zone_overlay_);
     lv_obj_set_style_radius(rh_graph_zone_overlay_,
                             lv_obj_get_style_radius(objects.chart_rh_info, LV_PART_MAIN),
                             LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -407,7 +415,7 @@ void UiController::ensure_humidity_time_labels() {
         objects.rh_info_graph,
         objects.chart_rh_info,
         rh_graph_time_labels_,
-        kTempGraphTimeTickCount);
+        kGraphTimeTickCount);
 }
 
 void UiController::update_humidity_time_labels() {
@@ -415,7 +423,7 @@ void UiController::update_humidity_time_labels() {
         objects.rh_info_graph,
         objects.chart_rh_info,
         rh_graph_time_labels_,
-        kTempGraphTimeTickCount,
+        kGraphTimeTickCount,
         humidity_graph_points());
 }
 
@@ -522,6 +530,7 @@ void UiController::update_temperature_info_graph() {
     update_temperature_time_labels();
 
     lv_chart_refresh(objects.chart_temp_info);
+    mark_active_graph_refreshed(INFO_TEMP, temp_graph_range_, points);
 }
 
 void UiController::update_humidity_info_graph() {
@@ -614,5 +623,6 @@ void UiController::update_humidity_info_graph() {
     update_humidity_time_labels();
 
     lv_chart_refresh(objects.chart_rh_info);
+    mark_active_graph_refreshed(INFO_RH, rh_graph_range_, points);
 }
 
