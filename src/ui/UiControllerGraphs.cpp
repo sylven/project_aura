@@ -118,7 +118,10 @@ lv_chart_series_t *UiController::ensure_info_chart_series(lv_obj_t *chart, uint1
         return nullptr;
     }
 
-    lv_chart_set_point_count(chart, points);
+    const uint16_t desired_points = (points > 0U) ? points : 1U;
+    if (lv_chart_get_point_count(chart) != desired_points) {
+        lv_chart_set_point_count(chart, desired_points);
+    }
 
     lv_chart_series_t *series = lv_chart_get_series_next(chart, nullptr);
     if (!series) {
