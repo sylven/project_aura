@@ -154,6 +154,18 @@ uint16_t UiController::co2_graph_points() const {
     }
 }
 
+uint16_t UiController::co_graph_points() const {
+    switch (co_graph_range_) {
+        case TEMP_GRAPH_RANGE_1H:
+            return Config::CHART_HISTORY_1H_STEPS;
+        case TEMP_GRAPH_RANGE_24H:
+            return Config::CHART_HISTORY_24H_SAMPLES;
+        case TEMP_GRAPH_RANGE_3H:
+        default:
+            return Config::CHART_HISTORY_3H_STEPS;
+    }
+}
+
 uint16_t UiController::pressure_graph_points() const {
     switch (pressure_graph_range_) {
         case TEMP_GRAPH_RANGE_1H:
@@ -237,9 +249,11 @@ void UiController::sync_info_graph_button_state() {
     const bool nox_selected = (info_sensor == INFO_NOX);
     const bool hcho_selected = (info_sensor == INFO_HCHO);
     const bool co2_selected = (info_sensor == INFO_CO2);
+    const bool co_selected = (info_sensor == INFO_CO);
     const bool pressure_selected = (info_sensor == INFO_PRESSURE_3H) || (info_sensor == INFO_PRESSURE_24H);
     const bool graph_supported = (info_sensor == INFO_TEMP) || (info_sensor == INFO_RH) ||
-                                 voc_selected || nox_selected || hcho_selected || co2_selected || pressure_selected;
+                                 voc_selected || nox_selected || hcho_selected || co2_selected ||
+                                 co_selected || pressure_selected;
     const bool graph_checked =
         ((info_sensor == INFO_TEMP) && temp_graph_mode_) ||
         ((info_sensor == INFO_RH) && rh_graph_mode_) ||
@@ -247,6 +261,7 @@ void UiController::sync_info_graph_button_state() {
         (nox_selected && nox_graph_mode_) ||
         (hcho_selected && hcho_graph_mode_) ||
         (co2_selected && co2_graph_mode_) ||
+        (co_selected && co_graph_mode_) ||
         (pressure_selected && pressure_graph_mode_);
 
     if (graph_checked) {
@@ -290,6 +305,9 @@ bool UiController::should_show_threshold_dots() const {
     }
     if (info_sensor == INFO_CO2) {
         return !co2_graph_mode_;
+    }
+    if (info_sensor == INFO_CO) {
+        return !co_graph_mode_;
     }
     if (info_sensor == INFO_PRESSURE_3H || info_sensor == INFO_PRESSURE_24H) {
         return !pressure_graph_mode_;
@@ -541,6 +559,47 @@ void UiController::set_co2_info_mode(bool graph_mode) {
     set_checked(objects.btn_co2_range_1h, co2_graph_range_ == TEMP_GRAPH_RANGE_1H);
     set_checked(objects.btn_co2_range_3h, co2_graph_range_ == TEMP_GRAPH_RANGE_3H);
     set_checked(objects.btn_co2_range_24h, co2_graph_range_ == TEMP_GRAPH_RANGE_24H);
+
+    sync_info_graph_button_state();
+}
+
+void UiController::set_co_info_mode(bool graph_mode) {
+    co_graph_mode_ = graph_mode;
+    if (objects.btn_co_range_1h) {
+        lv_obj_add_flag(objects.btn_co_range_1h, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_CHECKABLE);
+        lv_obj_set_ext_click_area(objects.btn_co_range_1h, 12);
+    }
+    if (objects.btn_co_range_3h) {
+        lv_obj_add_flag(objects.btn_co_range_3h, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_CHECKABLE);
+        lv_obj_set_ext_click_area(objects.btn_co_range_3h, 12);
+    }
+    if (objects.btn_co_range_24h) {
+        lv_obj_add_flag(objects.btn_co_range_24h, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_CHECKABLE);
+        lv_obj_set_ext_click_area(objects.btn_co_range_24h, 12);
+    }
+    if (objects.btn_info_graph) {
+        lv_obj_move_foreground(objects.btn_info_graph);
+    }
+    if (objects.btn_back_1) {
+        lv_obj_move_foreground(objects.btn_back_1);
+    }
+    set_visible(objects.co_info_thresholds, !graph_mode);
+    set_visible(objects.co_info_graph, graph_mode);
+    sync_threshold_dots_visibility();
+
+    auto set_checked = [](lv_obj_t *btn, bool checked) {
+        if (!btn) {
+            return;
+        }
+        if (checked) {
+            lv_obj_add_state(btn, LV_STATE_CHECKED);
+        } else {
+            lv_obj_clear_state(btn, LV_STATE_CHECKED);
+        }
+    };
+    set_checked(objects.btn_co_range_1h, co_graph_range_ == TEMP_GRAPH_RANGE_1H);
+    set_checked(objects.btn_co_range_3h, co_graph_range_ == TEMP_GRAPH_RANGE_3H);
+    set_checked(objects.btn_co_range_24h, co_graph_range_ == TEMP_GRAPH_RANGE_24H);
 
     sync_info_graph_button_state();
 }
@@ -3474,6 +3533,485 @@ void UiController::update_co2_info_graph() {
     update_co2_time_labels();
 
     lv_chart_refresh(objects.chart_co2_info);
+}
+
+void UiController::ensure_co_graph_overlays() {
+    if (!objects.chart_co_info) {
+        return;
+    }
+
+    auto ensure_label = [this](lv_obj_t *&label, lv_align_t align, lv_coord_t x_ofs, lv_coord_t y_ofs) {
+        if (!label || !lv_obj_is_valid(label) || lv_obj_get_parent(label) != objects.chart_co_info) {
+            label = lv_label_create(objects.chart_co_info);
+            lv_obj_clear_flag(label, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);
+            lv_obj_set_style_text_font(label, &ui_font_jet_reg_14, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_left(label, 8, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_right(label, 8, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_top(label, 3, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_bottom(label, 3, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_radius(label, 8, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_border_width(label, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_opa(label, LV_OPA_70, LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
+        lv_obj_align(label, align, x_ofs, y_ofs);
+        lv_obj_move_foreground(label);
+    };
+
+    ensure_label(co_graph_label_min_, LV_ALIGN_BOTTOM_LEFT, 8, -6);
+    ensure_label(co_graph_label_now_, LV_ALIGN_TOP_LEFT, 8, 6);
+    ensure_label(co_graph_label_max_, LV_ALIGN_TOP_RIGHT, -8, 6);
+}
+
+void UiController::update_co_graph_overlays(bool has_values,
+                                            float min_co,
+                                            float max_co,
+                                            float latest_co) {
+    if (!objects.chart_co_info) {
+        return;
+    }
+
+    ensure_co_graph_overlays();
+    if (!co_graph_label_min_ || !co_graph_label_now_ || !co_graph_label_max_) {
+        return;
+    }
+
+    const lv_color_t chart_bg = lv_obj_get_style_bg_color(objects.chart_co_info, LV_PART_MAIN);
+    const lv_color_t border = lv_obj_get_style_border_color(objects.chart_co_info, LV_PART_MAIN);
+    const lv_color_t text = active_text_color();
+    const lv_color_t badge_bg = lv_color_mix(border, chart_bg, LV_OPA_60);
+
+    lv_obj_t *labels[] = {co_graph_label_min_, co_graph_label_now_, co_graph_label_max_};
+    for (lv_obj_t *label : labels) {
+        lv_obj_set_style_text_color(label, text, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_color(label, badge_bg, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_border_color(label, border, LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+
+    if (!has_values) {
+        safe_label_set_text(co_graph_label_min_, "MIN --");
+        safe_label_set_text(co_graph_label_now_, "NOW --");
+        safe_label_set_text(co_graph_label_max_, "MAX --");
+        return;
+    }
+
+    char min_buf[32];
+    char now_buf[32];
+    char max_buf[32];
+    snprintf(min_buf, sizeof(min_buf), "MIN %.1f ppm", min_co);
+    snprintf(now_buf, sizeof(now_buf), "NOW %.1f ppm", latest_co);
+    snprintf(max_buf, sizeof(max_buf), "MAX %.1f ppm", max_co);
+    safe_label_set_text(co_graph_label_min_, min_buf);
+    safe_label_set_text(co_graph_label_now_, now_buf);
+    safe_label_set_text(co_graph_label_max_, max_buf);
+}
+
+void UiController::ensure_co_zone_overlay() {
+    if (!objects.co_info_graph || !objects.chart_co_info) {
+        return;
+    }
+
+    if (!co_graph_zone_overlay_ || !lv_obj_is_valid(co_graph_zone_overlay_) ||
+        lv_obj_get_parent(co_graph_zone_overlay_) != objects.co_info_graph) {
+        co_graph_zone_overlay_ = lv_obj_create(objects.co_info_graph);
+        lv_obj_clear_flag(co_graph_zone_overlay_, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);
+        lv_obj_set_style_bg_opa(co_graph_zone_overlay_, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_border_width(co_graph_zone_overlay_, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_pad_left(co_graph_zone_overlay_, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_pad_right(co_graph_zone_overlay_, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_pad_top(co_graph_zone_overlay_, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_pad_bottom(co_graph_zone_overlay_, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+
+    const lv_coord_t chart_x = lv_obj_get_x(objects.chart_co_info);
+    const lv_coord_t chart_y = lv_obj_get_y(objects.chart_co_info);
+    const lv_coord_t chart_w = lv_obj_get_width(objects.chart_co_info);
+    const lv_coord_t chart_h = lv_obj_get_height(objects.chart_co_info);
+
+    lv_obj_set_pos(co_graph_zone_overlay_, chart_x, chart_y);
+    lv_obj_set_size(co_graph_zone_overlay_, chart_w, chart_h);
+    lv_obj_set_style_radius(co_graph_zone_overlay_,
+                            lv_obj_get_style_radius(objects.chart_co_info, LV_PART_MAIN),
+                            LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    for (uint8_t i = 0; i < kMaxGraphZoneBands; ++i) {
+        lv_obj_t *&band = co_graph_zone_bands_[i];
+        if (!band || !lv_obj_is_valid(band) || lv_obj_get_parent(band) != co_graph_zone_overlay_) {
+            band = lv_obj_create(co_graph_zone_overlay_);
+            lv_obj_clear_flag(band, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);
+            lv_obj_set_style_border_width(band, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_radius(band, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_left(band, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_right(band, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_top(band, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_bottom(band, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
+        lv_obj_move_background(band);
+    }
+
+    lv_obj_move_background(co_graph_zone_overlay_);
+    lv_obj_move_foreground(objects.chart_co_info);
+}
+
+void UiController::update_co_zone_overlay(float y_min_display, float y_max_display) {
+    ensure_co_zone_overlay();
+    if (!co_graph_zone_overlay_ || !lv_obj_is_valid(co_graph_zone_overlay_)) {
+        return;
+    }
+
+    const lv_coord_t width = lv_obj_get_width(co_graph_zone_overlay_);
+    const lv_coord_t height = lv_obj_get_height(co_graph_zone_overlay_);
+    if (width <= 0 || height <= 0 || !isfinite(y_min_display) || !isfinite(y_max_display) || y_max_display <= y_min_display) {
+        for (uint8_t i = 0; i < kMaxGraphZoneBands; ++i) {
+            if (co_graph_zone_bands_[i]) {
+                lv_obj_add_flag(co_graph_zone_bands_[i], LV_OBJ_FLAG_HIDDEN);
+            }
+        }
+        return;
+    }
+
+    static const float kCoZoneBounds[] = {
+        -1000.0f,
+        Config::AQ_CO_GREEN_MAX_PPM,
+        Config::AQ_CO_YELLOW_MAX_PPM,
+        Config::AQ_CO_ORANGE_MAX_PPM,
+        100000.0f,
+    };
+    static const GraphZoneTone kCoZoneTones[] = {
+        GRAPH_ZONE_GREEN,
+        GRAPH_ZONE_YELLOW,
+        GRAPH_ZONE_ORANGE,
+        GRAPH_ZONE_RED,
+    };
+    constexpr uint8_t kCoZoneCount = 4;
+
+    const lv_color_t chart_bg = lv_obj_get_style_bg_color(objects.chart_co_info, LV_PART_MAIN);
+    const float denom = y_max_display - y_min_display;
+
+    for (uint8_t i = 0; i < kMaxGraphZoneBands; ++i) {
+        lv_obj_t *band = co_graph_zone_bands_[i];
+        if (!band) {
+            continue;
+        }
+        if (i >= kCoZoneCount) {
+            lv_obj_add_flag(band, LV_OBJ_FLAG_HIDDEN);
+            continue;
+        }
+
+        const float zone_low = kCoZoneBounds[i];
+        const float zone_high = kCoZoneBounds[i + 1];
+        if (!isfinite(zone_low) || !isfinite(zone_high) || zone_high <= zone_low) {
+            lv_obj_add_flag(band, LV_OBJ_FLAG_HIDDEN);
+            continue;
+        }
+
+        const float visible_low = fmaxf(zone_low, y_min_display);
+        const float visible_high = fminf(zone_high, y_max_display);
+        if (!(visible_high > visible_low)) {
+            lv_obj_add_flag(band, LV_OBJ_FLAG_HIDDEN);
+            continue;
+        }
+
+        float top_ratio = (y_max_display - visible_high) / denom;
+        float bottom_ratio = (y_max_display - visible_low) / denom;
+        if (top_ratio < 0.0f) top_ratio = 0.0f;
+        if (top_ratio > 1.0f) top_ratio = 1.0f;
+        if (bottom_ratio < 0.0f) bottom_ratio = 0.0f;
+        if (bottom_ratio > 1.0f) bottom_ratio = 1.0f;
+
+        lv_coord_t top = static_cast<lv_coord_t>(lroundf(top_ratio * static_cast<float>(height)));
+        lv_coord_t bottom = static_cast<lv_coord_t>(lroundf(bottom_ratio * static_cast<float>(height)));
+        if (bottom <= top) {
+            bottom = static_cast<lv_coord_t>(top + 1);
+        }
+        if (top < 0) top = 0;
+        if (bottom > height) bottom = height;
+        if (bottom <= top) {
+            lv_obj_add_flag(band, LV_OBJ_FLAG_HIDDEN);
+            continue;
+        }
+
+        lv_obj_set_pos(band, 0, top);
+        lv_obj_set_size(band, width, static_cast<lv_coord_t>(bottom - top));
+        const lv_color_t zone_color = resolve_graph_zone_color(kCoZoneTones[i], chart_bg);
+        lv_obj_set_style_bg_color(band, zone_color, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_bg_opa(band, LV_OPA_30, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_clear_flag(band, LV_OBJ_FLAG_HIDDEN);
+        lv_obj_move_background(band);
+    }
+}
+
+void UiController::ensure_co_time_labels() {
+    if (!objects.co_info_graph || !objects.chart_co_info) {
+        return;
+    }
+
+    auto ensure_label = [this](lv_obj_t *&label) {
+        if (!label || !lv_obj_is_valid(label) || lv_obj_get_parent(label) != objects.co_info_graph) {
+            label = lv_label_create(objects.co_info_graph);
+            lv_obj_clear_flag(label, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);
+            lv_obj_set_style_text_font(label, &ui_font_jet_reg_14, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_bg_opa(label, LV_OPA_TRANSP, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_border_width(label, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_left(label, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_right(label, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_top(label, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_pad_bottom(label, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+        }
+    };
+
+    for (uint8_t i = 0; i < kTempGraphTimeTickCount; ++i) {
+        ensure_label(co_graph_time_labels_[i]);
+    }
+
+    const lv_color_t border = lv_obj_get_style_border_color(objects.chart_co_info, LV_PART_MAIN);
+    const lv_color_t text = lv_color_mix(active_text_color(), border, LV_OPA_30);
+    for (uint8_t i = 0; i < kTempGraphTimeTickCount; ++i) {
+        lv_obj_t *label = co_graph_time_labels_[i];
+        if (!label) {
+            continue;
+        }
+        lv_obj_set_style_text_color(label, text, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_opa(label, LV_OPA_80, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_move_foreground(label);
+    }
+}
+
+void UiController::update_co_time_labels() {
+    if (!objects.chart_co_info || !objects.co_info_graph) {
+        return;
+    }
+
+    ensure_co_time_labels();
+    if (!co_graph_time_labels_[0]) {
+        return;
+    }
+
+    const uint16_t points = co_graph_points();
+    const uint32_t step_s = Config::CHART_HISTORY_STEP_MS / 1000UL;
+    const uint32_t span_points = (points > 1) ? static_cast<uint32_t>(points - 1) : 1U;
+    uint32_t duration_s = step_s * span_points;
+    if (duration_s == 0) {
+        duration_s = 3600U;
+    }
+
+    bool absolute_time = timeManager.isSystemTimeValid();
+    time_t end_epoch = static_cast<time_t>(chartsHistory.latestEpoch());
+    if (!absolute_time || end_epoch <= Config::TIME_VALID_EPOCH) {
+        end_epoch = time(nullptr);
+        if (end_epoch <= Config::TIME_VALID_EPOCH) {
+            absolute_time = false;
+        }
+    }
+
+    constexpr uint8_t kLastTick = kTempGraphTimeTickCount - 1;
+    for (uint8_t i = 0; i < kTempGraphTimeTickCount; ++i) {
+        lv_obj_t *label = co_graph_time_labels_[i];
+        if (!label) {
+            continue;
+        }
+
+        const uint32_t ratio_num = static_cast<uint32_t>(kLastTick - i);
+        const uint32_t offset_s = static_cast<uint32_t>(
+            (static_cast<uint64_t>(duration_s) * static_cast<uint64_t>(ratio_num)) / static_cast<uint64_t>(kLastTick));
+
+        char buf[24];
+        bool formatted = false;
+        if (absolute_time) {
+            const time_t tick_epoch = end_epoch - static_cast<time_t>(offset_s);
+            formatted = format_epoch_hhmm(tick_epoch, buf, sizeof(buf));
+        }
+        if (!formatted) {
+            format_relative_time_label(offset_s, buf, sizeof(buf));
+        }
+        safe_label_set_text(label, buf);
+    }
+
+    const lv_coord_t chart_x = lv_obj_get_x(objects.chart_co_info);
+    const lv_coord_t chart_y = lv_obj_get_y(objects.chart_co_info);
+    const lv_coord_t chart_w = lv_obj_get_width(objects.chart_co_info);
+    const lv_coord_t chart_h = lv_obj_get_height(objects.chart_co_info);
+    const lv_coord_t label_y = chart_y + chart_h + 4;
+
+    for (uint8_t i = 0; i < kTempGraphTimeTickCount; ++i) {
+        lv_obj_t *label = co_graph_time_labels_[i];
+        if (!label) {
+            continue;
+        }
+
+        lv_obj_update_layout(label);
+        const lv_coord_t label_w = lv_obj_get_width(label);
+        lv_coord_t tick_x = chart_x;
+        if (chart_w > 1) {
+            tick_x = chart_x + static_cast<lv_coord_t>(
+                (static_cast<int32_t>(chart_w - 1) * static_cast<int32_t>(i)) / static_cast<int32_t>(kLastTick));
+        }
+
+        lv_coord_t label_x = tick_x - (label_w / 2);
+        const lv_coord_t min_x = chart_x;
+        const lv_coord_t max_x = chart_x + chart_w - label_w;
+        if (label_x < min_x) {
+            label_x = min_x;
+        }
+        if (label_x > max_x) {
+            label_x = max_x;
+        }
+
+        lv_obj_set_pos(label, label_x, label_y);
+        lv_obj_move_foreground(label);
+    }
+}
+
+void UiController::update_co_info_graph() {
+    if (!objects.chart_co_info) {
+        return;
+    }
+
+    lv_color_t card_bg = lv_color_hex(0xff160c09);
+    lv_color_t border_color = color_card_border();
+    if (objects.card_co2_pro) {
+        card_bg = lv_obj_get_style_bg_color(objects.card_co2_pro, LV_PART_MAIN);
+        border_color = lv_obj_get_style_border_color(objects.card_co2_pro, LV_PART_MAIN);
+    }
+
+    const lv_color_t text_color = active_text_color();
+    const lv_color_t grid_color = lv_color_mix(border_color, card_bg, LV_OPA_50);
+    const lv_color_t line_color = lv_color_mix(border_color, text_color, LV_OPA_40);
+
+    lv_chart_set_type(objects.chart_co_info, LV_CHART_TYPE_LINE);
+    lv_chart_set_update_mode(objects.chart_co_info, LV_CHART_UPDATE_MODE_SHIFT);
+
+    uint8_t vertical_divisions = 13;
+    if (co_graph_range_ == TEMP_GRAPH_RANGE_24H) {
+        vertical_divisions = 25;
+    }
+
+    lv_obj_set_style_bg_color(objects.chart_co_info, card_bg, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(objects.chart_co_info, LV_OPA_30, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(objects.chart_co_info, border_color, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(objects.chart_co_info, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(objects.chart_co_info, 12, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_line_color(objects.chart_co_info, grid_color, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_line_opa(objects.chart_co_info, LV_OPA_50, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_line_width(objects.chart_co_info, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_set_style_line_color(objects.chart_co_info, line_color, LV_PART_ITEMS | LV_STATE_DEFAULT);
+    lv_obj_set_style_line_width(objects.chart_co_info, 3, LV_PART_ITEMS | LV_STATE_DEFAULT);
+    lv_obj_set_style_line_opa(objects.chart_co_info, LV_OPA_COVER, LV_PART_ITEMS | LV_STATE_DEFAULT);
+    lv_obj_set_style_size(objects.chart_co_info, 0, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+
+    const uint16_t points = co_graph_points();
+    lv_chart_set_point_count(objects.chart_co_info, points);
+
+    lv_chart_series_t *series = lv_chart_get_series_next(objects.chart_co_info, nullptr);
+    if (!series) {
+        series = lv_chart_add_series(objects.chart_co_info,
+                                     lv_obj_get_style_line_color(objects.chart_co_info, LV_PART_ITEMS),
+                                     LV_CHART_AXIS_PRIMARY_Y);
+    }
+    if (!series) {
+        return;
+    }
+
+    series->color = lv_obj_get_style_line_color(objects.chart_co_info, LV_PART_ITEMS);
+    lv_chart_set_all_value(objects.chart_co_info, series, LV_CHART_POINT_NONE);
+
+    const uint16_t total_count = chartsHistory.count();
+    const uint16_t available = (total_count < points) ? total_count : points;
+    const uint16_t missing_prefix = points - available;
+    const uint16_t start_offset = total_count - available;
+
+    bool has_values = false;
+    float min_co = FLT_MAX;
+    float max_co = -FLT_MAX;
+    float latest_co = NAN;
+
+    for (uint16_t i = 0; i < points; ++i) {
+        lv_coord_t point_value = LV_CHART_POINT_NONE;
+        if (i >= missing_prefix) {
+            const uint16_t offset = start_offset + (i - missing_prefix);
+            float value = 0.0f;
+            bool valid = false;
+            if (chartsHistory.metricValueFromOldest(offset, ChartsHistory::METRIC_CO, value, valid) &&
+                valid && isfinite(value) && value >= 0.0f) {
+                if (!has_values) {
+                    min_co = value;
+                    max_co = value;
+                    has_values = true;
+                } else {
+                    if (value < min_co) {
+                        min_co = value;
+                    }
+                    if (value > max_co) {
+                        max_co = value;
+                    }
+                }
+                latest_co = value;
+                point_value = static_cast<lv_coord_t>(lroundf(value * 10.0f));
+            }
+        }
+        lv_chart_set_value_by_id(objects.chart_co_info, series, i, point_value);
+    }
+
+    float scale_min = has_values ? min_co : 0.0f;
+    float scale_max = has_values ? max_co : Config::AQ_CO_GREEN_MAX_PPM;
+    float scale_span = scale_max - scale_min;
+    if (!isfinite(scale_span) || scale_span < 5.0f) {
+        scale_span = 5.0f;
+    }
+
+    float step = graph_nice_step(scale_span / 4.0f);
+    if (!isfinite(step) || step <= 0.0f) {
+        step = 1.0f;
+    }
+
+    float y_min_f = floorf((scale_min - (step * 0.9f)) / step) * step;
+    float y_max_f = ceilf((scale_max + (step * 0.9f)) / step) * step;
+    if ((y_max_f - y_min_f) < (step * 2.0f)) {
+        y_min_f -= step;
+        y_max_f += step;
+    }
+    if (!isfinite(y_min_f) || !isfinite(y_max_f) || y_max_f <= y_min_f) {
+        const float center = isfinite(latest_co) ? latest_co : (Config::AQ_CO_GREEN_MAX_PPM * 0.5f);
+        y_min_f = center - 5.0f;
+        y_max_f = center + 5.0f;
+    }
+    if (y_min_f < 0.0f) {
+        y_min_f = 0.0f;
+    }
+
+    lv_coord_t y_min = static_cast<lv_coord_t>(floorf(y_min_f * 10.0f));
+    lv_coord_t y_max = static_cast<lv_coord_t>(ceilf(y_max_f * 10.0f));
+    if (y_max <= y_min) {
+        y_max = static_cast<lv_coord_t>(y_min + 10);
+    }
+
+    int32_t horizontal_divisions = static_cast<int32_t>(lroundf((y_max_f - y_min_f) / step));
+    if (horizontal_divisions < 3) {
+        horizontal_divisions = 3;
+    }
+    if (horizontal_divisions > 12) {
+        horizontal_divisions = 12;
+    }
+
+    lv_chart_set_div_line_count(objects.chart_co_info,
+                                static_cast<uint8_t>(horizontal_divisions),
+                                vertical_divisions);
+    lv_chart_set_range(objects.chart_co_info, LV_CHART_AXIS_PRIMARY_Y, y_min, y_max);
+    update_co_zone_overlay(y_min_f, y_max_f);
+
+    if (has_values) {
+        if (!isfinite(latest_co)) {
+            latest_co = max_co;
+        }
+        update_co_graph_overlays(true, min_co, max_co, latest_co);
+    } else {
+        const float fallback = Config::AQ_CO_GREEN_MAX_PPM * 0.5f;
+        update_co_graph_overlays(false, fallback, fallback, fallback);
+    }
+    update_co_time_labels();
+
+    lv_chart_refresh(objects.chart_co_info);
 }
 
 void UiController::ensure_pressure_graph_overlays() {

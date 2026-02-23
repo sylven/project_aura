@@ -132,6 +132,9 @@ void UiController::on_hcho_range_24h_event_cb(lv_event_t *e) { if (instance_) in
 void UiController::on_co2_range_1h_event_cb(lv_event_t *e) { if (instance_) instance_->on_co2_range_1h_event(e); }
 void UiController::on_co2_range_3h_event_cb(lv_event_t *e) { if (instance_) instance_->on_co2_range_3h_event(e); }
 void UiController::on_co2_range_24h_event_cb(lv_event_t *e) { if (instance_) instance_->on_co2_range_24h_event(e); }
+void UiController::on_co_range_1h_event_cb(lv_event_t *e) { if (instance_) instance_->on_co_range_1h_event(e); }
+void UiController::on_co_range_3h_event_cb(lv_event_t *e) { if (instance_) instance_->on_co_range_3h_event(e); }
+void UiController::on_co_range_24h_event_cb(lv_event_t *e) { if (instance_) instance_->on_co_range_24h_event(e); }
 void UiController::on_pressure_range_1h_event_cb(lv_event_t *e) { if (instance_) instance_->on_pressure_range_1h_event(e); }
 void UiController::on_pressure_range_3h_event_cb(lv_event_t *e) { if (instance_) instance_->on_pressure_range_3h_event(e); }
 void UiController::on_pressure_range_24h_event_cb(lv_event_t *e) { if (instance_) instance_->on_pressure_range_24h_event(e); }
@@ -808,7 +811,7 @@ void UiController::on_info_graph_event(lv_event_t *e) {
         return;
     }
     LOGD("UI",
-         "info/graph pressed, code=%d info_sensor=%d temp_mode=%d rh_mode=%d voc_mode=%d nox_mode=%d hcho_mode=%d co2_mode=%d pressure_mode=%d",
+         "info/graph pressed, code=%d info_sensor=%d temp_mode=%d rh_mode=%d voc_mode=%d nox_mode=%d hcho_mode=%d co2_mode=%d co_mode=%d pressure_mode=%d",
          static_cast<int>(code),
          static_cast<int>(info_sensor),
          temp_graph_mode_ ? 1 : 0,
@@ -817,6 +820,7 @@ void UiController::on_info_graph_event(lv_event_t *e) {
          nox_graph_mode_ ? 1 : 0,
          hcho_graph_mode_ ? 1 : 0,
          co2_graph_mode_ ? 1 : 0,
+         co_graph_mode_ ? 1 : 0,
          pressure_graph_mode_ ? 1 : 0);
 
     if (info_sensor == INFO_TEMP) {
@@ -831,6 +835,8 @@ void UiController::on_info_graph_event(lv_event_t *e) {
         set_hcho_info_mode(!hcho_graph_mode_);
     } else if (info_sensor == INFO_CO2) {
         set_co2_info_mode(!co2_graph_mode_);
+    } else if (info_sensor == INFO_CO) {
+        set_co_info_mode(!co_graph_mode_);
     } else if (info_sensor == INFO_PRESSURE_3H || info_sensor == INFO_PRESSURE_24H) {
         set_pressure_info_mode(!pressure_graph_mode_);
     } else {
@@ -1109,6 +1115,48 @@ void UiController::on_co2_range_24h_event(lv_event_t *e) {
     }
     co2_graph_range_ = TEMP_GRAPH_RANGE_24H;
     set_co2_info_mode(true);
+    update_sensor_info_ui();
+}
+
+void UiController::on_co_range_1h_event(lv_event_t *e) {
+    const lv_event_code_t code = lv_event_get_code(e);
+    if (code != LV_EVENT_VALUE_CHANGED) {
+        return;
+    }
+    LOGD("UI", "co range 1h pressed, code=%d", static_cast<int>(code));
+    if (info_sensor != INFO_CO) {
+        select_pm_info(INFO_CO);
+    }
+    co_graph_range_ = TEMP_GRAPH_RANGE_1H;
+    set_co_info_mode(true);
+    update_sensor_info_ui();
+}
+
+void UiController::on_co_range_3h_event(lv_event_t *e) {
+    const lv_event_code_t code = lv_event_get_code(e);
+    if (code != LV_EVENT_VALUE_CHANGED) {
+        return;
+    }
+    LOGD("UI", "co range 3h pressed, code=%d", static_cast<int>(code));
+    if (info_sensor != INFO_CO) {
+        select_pm_info(INFO_CO);
+    }
+    co_graph_range_ = TEMP_GRAPH_RANGE_3H;
+    set_co_info_mode(true);
+    update_sensor_info_ui();
+}
+
+void UiController::on_co_range_24h_event(lv_event_t *e) {
+    const lv_event_code_t code = lv_event_get_code(e);
+    if (code != LV_EVENT_VALUE_CHANGED) {
+        return;
+    }
+    LOGD("UI", "co range 24h pressed, code=%d", static_cast<int>(code));
+    if (info_sensor != INFO_CO) {
+        select_pm_info(INFO_CO);
+    }
+    co_graph_range_ = TEMP_GRAPH_RANGE_24H;
+    set_co_info_mode(true);
     update_sensor_info_ui();
 }
 

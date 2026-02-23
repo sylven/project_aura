@@ -332,6 +332,10 @@ void UiController::update_sensor_info_ui() {
             safe_label_set_text(objects.label_sensor_info_unit, "ppm");
             lv_color_t co_col = co_valid ? getCOColor(currentData.co_ppm) : color_inactive();
             set_dot_color(objects.dot_sensor_info, alert_color_for_mode(co_col));
+            set_co_info_mode(co_graph_mode_);
+            if (co_graph_mode_) {
+                update_co_info_graph();
+            }
             break;
         }
         case INFO_PRESSURE_3H:
@@ -564,6 +568,7 @@ void UiController::select_pm_info(InfoSensor sensor) {
 
     if (sensor == INFO_CO) {
         set_visible(objects.co_info, true);
+        set_co_info_mode(co_graph_mode_);
         if (objects.label_sensor_info_title) {
             safe_label_set_text(objects.label_sensor_info_title, "CO");
         }
@@ -661,6 +666,8 @@ void UiController::hide_all_sensor_info_containers() {
     set_visible(objects.hcho_info_thresholds, false);
     set_visible(objects.hcho_info_graph, false);
     set_visible(objects.co_info, false);
+    set_visible(objects.co_info_thresholds, false);
+    set_visible(objects.co_info_graph, false);
     set_visible(objects.humidity_info_rh_ah, false);
     set_visible(objects.humidity_info_mr_dp, false);
     set_visible(objects.rh_info, false);
