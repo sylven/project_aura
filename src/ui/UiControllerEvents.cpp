@@ -510,7 +510,16 @@ void UiController::on_wifi_start_ap_event(lv_event_t *e) {
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
         return;
     }
-    networkManager.startApOnDemand();
+    const AuraNetworkManager::WifiState wifi_state = networkManager.state();
+    if (wifi_state == AuraNetworkManager::WIFI_STATE_AP_CONFIG) {
+        if (!networkManager.ssid().isEmpty()) {
+            networkManager.connectSta();
+        } else {
+            networkManager.setEnabled(false);
+        }
+    } else {
+        networkManager.startApOnDemand();
+    }
     update_wifi_ui();
     mqtt_sync_with_wifi();
     datetime_ui_dirty = true;
