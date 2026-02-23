@@ -364,6 +364,8 @@ void UiEventBinder::applyToggleStylesForAvailableObjects(UiController &owner, in
         objects.btn_head_status_1,
         objects.btn_wifi,
         objects.btn_mqtt,
+        objects.btn_wifi_reconnect,
+        objects.btn_wifi_start_ap,
         objects.btn_units_c_f,
         objects.btn_units_mdy,
         objects.btn_led_indicators,

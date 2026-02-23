@@ -25,6 +25,41 @@
 
 using namespace Config;
 
+namespace {
+
+constexpr uint32_t kWifiActionFeedbackMs = 220;
+
+void wifi_action_feedback_timer_cb(lv_timer_t *timer) {
+    if (!timer) {
+        return;
+    }
+
+    lv_obj_t *btn = static_cast<lv_obj_t *>(timer->user_data);
+    if (btn && lv_obj_is_valid(btn)) {
+        lv_obj_clear_state(btn, LV_STATE_CHECKED);
+        lv_obj_invalidate(btn);
+    }
+    lv_timer_del(timer);
+}
+
+void show_wifi_action_feedback(lv_obj_t *btn) {
+    if (!btn || !lv_obj_is_valid(btn)) {
+        return;
+    }
+
+    lv_obj_add_state(btn, LV_STATE_CHECKED);
+    lv_obj_invalidate(btn);
+    lv_timer_t *timer = lv_timer_create(wifi_action_feedback_timer_cb, kWifiActionFeedbackMs, btn);
+    if (timer) {
+        lv_timer_set_repeat_count(timer, 1);
+    } else {
+        lv_obj_clear_state(btn, LV_STATE_CHECKED);
+        lv_obj_invalidate(btn);
+    }
+}
+
+} // namespace
+
 void UiController::on_settings_event_cb(lv_event_t *e) { if (instance_) instance_->on_settings_event(e); }
 void UiController::on_back_event_cb(lv_event_t *e) { if (instance_) instance_->on_back_event(e); }
 void UiController::on_about_event_cb(lv_event_t *e) { if (instance_) instance_->on_about_event(e); }
@@ -457,6 +492,8 @@ void UiController::on_wifi_reconnect_event(lv_event_t *e) {
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
         return;
     }
+    lv_obj_t *btn = lv_event_get_target(e);
+    show_wifi_action_feedback(btn);
     if (!networkManager.isEnabled()) {
         networkManager.setEnabled(true);
     } else if (networkManager.ssid().isEmpty()) {
@@ -464,7 +501,7 @@ void UiController::on_wifi_reconnect_event(lv_event_t *e) {
     } else {
         networkManager.connectSta();
     }
-    sync_wifi_toggle_state();
+    update_wifi_ui();
     mqtt_sync_with_wifi();
     datetime_ui_dirty = true;
 }
@@ -473,8 +510,10 @@ void UiController::on_wifi_start_ap_event(lv_event_t *e) {
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
         return;
     }
+    lv_obj_t *btn = lv_event_get_target(e);
+    show_wifi_action_feedback(btn);
     networkManager.startApOnDemand();
-    sync_wifi_toggle_state();
+    update_wifi_ui();
     mqtt_sync_with_wifi();
     datetime_ui_dirty = true;
 }
