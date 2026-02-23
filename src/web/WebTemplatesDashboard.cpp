@@ -225,6 +225,7 @@ const parseSettingsPayload = (settings) => ({
   tempUnit: boolOrNull(settings?.units_c) === null ? null : (settings.units_c ? 'c' : 'f'),
   tempOffset: finiteNumberOrNull(settings?.temp_offset),
   humOffset: finiteNumberOrNull(settings?.hum_offset),
+  displayName: stringOrNull(settings?.display_name),
 });
 
 const DEFAULT_WEB_SETTINGS = {
@@ -234,6 +235,7 @@ const DEFAULT_WEB_SETTINGS = {
   tempUnit: 'c',
   tempOffset: -1.2,
   humOffset: 2,
+  displayName: null,
 };
 
 const settingsPatchFromParsed = (parsed) => {
@@ -247,6 +249,9 @@ const settingsPatchFromParsed = (parsed) => {
   }
   if (typeof parsed?.humOffset === 'number' && Number.isFinite(parsed.humOffset)) {
     patch.humOffset = Number(parsed.humOffset.toFixed(0));
+  }
+  if (typeof parsed?.displayName === 'string' || parsed?.displayName === null) {
+    patch.displayName = parsed.displayName;
   }
   return patch;
 };
@@ -1346,8 +1351,24 @@ function AuraDashboard() {
   const [tempDeviceName, setTempDeviceName] = useState(deviceName);
 
   const handleNameSave = () => {
-    setDeviceName(tempDeviceName);
-    setIsEditingName(false);
+    const nextName = tempDeviceName.trim();
+    postSettingsPatch({ display_name: nextName })
+      .then((payload) => {
+        const parsed = parseSettingsPayload(payload?.settings || {});
+        applyParsedSettings(parsed, true);
+        const fallbackHost = stateApi?.connectivity?.hostname || PREVIEW_HOSTNAME;
+        const resolvedName =
+          (typeof parsed?.displayName === 'string' && parsed.displayName.trim().length > 0)
+            ? parsed.displayName.trim()
+            : fallbackHost;
+        setDeviceName(resolvedName);
+        setTempDeviceName(resolvedName);
+        setIsEditingName(false);
+      })
+      .catch(() => {
+        setTempDeviceName(deviceName);
+        setIsEditingName(false);
+      });
   };
 
   const handleNameCancel = () => {
@@ -1772,10 +1793,15 @@ function AuraDashboard() {
   ]);
 
   useEffect(() => {
-    if (!isEditingName && stateConnectivity.hostname) {
-      setDeviceName(stateConnectivity.hostname);
-    }
-  }, [isEditingName, stateConnectivity.hostname]);
+    if (isEditingName) return;
+    const savedDisplayName =
+      typeof stateSettings.displayName === 'string' && stateSettings.displayName.trim().length > 0
+        ? stateSettings.displayName.trim()
+        : null;
+    const resolved = savedDisplayName || stateConnectivity.hostname || PREVIEW_HOSTNAME;
+    setDeviceName(resolved);
+    setTempDeviceName(resolved);
+  }, [isEditingName, stateSettings.displayName, stateConnectivity.hostname]);
   
   const fallbackAlerts = [
     { time: '14:32', type: 'CO2', message: 'Threshold exceeded (>1000 ppm)', severity: 'warning' },
@@ -1811,6 +1837,7 @@ function AuraDashboard() {
                 value={tempDeviceName}
                 onChange={(e) => setTempDeviceName(e.target.value)}
                 className="bg-gray-800 text-white text-[12px] font-mono border border-gray-600 rounded px-2 py-1 outline-none w-40"
+                maxLength={32}
                 autoFocus
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleNameSave();

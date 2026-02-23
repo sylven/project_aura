@@ -31,6 +31,7 @@ This repository contains the firmware source code and configuration needed to fl
 - [Configuration](#configuration)
 - [MQTT + Home Assistant](#mqtt--home-assistant)
 - [Contributing](#contributing)
+- [AI Assistance](#ai-assistance)
 - [License and Commercial Use](#license-and-commercial-use)
 - [Tests](#tests)
 - [Repo Layout](#repo-layout)
@@ -211,6 +212,10 @@ Contributions are welcome! Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) for 
 
 Found a bug? Open an Issue: https://github.com/21cncstudio/project_aura/issues
 Have a question? Ask in Discussions: https://github.com/21cncstudio/project_aura/discussions
+
+## AI Assistance
+Parts of this project are developed with AI-assisted workflows.
+Primary coding assistance is provided by GPT-5 Codex in a local developer workspace.
 
 ## License and Commercial Use
 - Firmware in this repository is licensed under GPL-3.0-or-later (see `LICENSE`).
