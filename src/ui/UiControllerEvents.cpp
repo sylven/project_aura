@@ -837,6 +837,19 @@ void UiController::on_info_graph_event(lv_event_t *e) {
          co_graph_mode_ ? 1 : 0,
          pressure_graph_mode_ ? 1 : 0);
 
+    const bool was_graph_mode =
+        (info_sensor == INFO_TEMP) ? temp_graph_mode_ :
+        (info_sensor == INFO_RH) ? rh_graph_mode_ :
+        (info_sensor == INFO_VOC) ? voc_graph_mode_ :
+        (info_sensor == INFO_NOX) ? nox_graph_mode_ :
+        (info_sensor == INFO_HCHO) ? hcho_graph_mode_ :
+        (info_sensor == INFO_CO2) ? co2_graph_mode_ :
+        (info_sensor == INFO_PM05) ? pm05_graph_mode_ :
+        ((info_sensor == INFO_PM25 || info_sensor == INFO_PM4) ? pm25_4_graph_mode_ :
+         ((info_sensor == INFO_PM1 || info_sensor == INFO_PM10) ? pm1_10_graph_mode_ :
+          ((info_sensor == INFO_CO) ? co_graph_mode_ :
+           ((info_sensor == INFO_PRESSURE_3H || info_sensor == INFO_PRESSURE_24H) ? pressure_graph_mode_ : false))));
+
     if (info_sensor == INFO_TEMP) {
         set_temperature_info_mode(!temp_graph_mode_);
     } else if (info_sensor == INFO_RH) {
@@ -868,7 +881,26 @@ void UiController::on_info_graph_event(lv_event_t *e) {
         return;
     }
 
-    update_sensor_info_ui();
+    const bool is_graph_mode =
+        (info_sensor == INFO_TEMP) ? temp_graph_mode_ :
+        (info_sensor == INFO_RH) ? rh_graph_mode_ :
+        (info_sensor == INFO_VOC) ? voc_graph_mode_ :
+        (info_sensor == INFO_NOX) ? nox_graph_mode_ :
+        (info_sensor == INFO_HCHO) ? hcho_graph_mode_ :
+        (info_sensor == INFO_CO2) ? co2_graph_mode_ :
+        (info_sensor == INFO_PM05) ? pm05_graph_mode_ :
+        ((info_sensor == INFO_PM25 || info_sensor == INFO_PM4) ? pm25_4_graph_mode_ :
+         ((info_sensor == INFO_PM1 || info_sensor == INFO_PM10) ? pm1_10_graph_mode_ :
+          ((info_sensor == INFO_CO) ? co_graph_mode_ :
+           ((info_sensor == INFO_PRESSURE_3H || info_sensor == INFO_PRESSURE_24H) ? pressure_graph_mode_ : false))));
+
+    if (is_graph_mode && !was_graph_mode) {
+        invalidate_active_graph_refresh_cache();
+        update_sensor_info_ui();
+        return;
+    }
+
+    data_dirty = true;
 }
 
 void UiController::on_temp_range_1h_event(lv_event_t *e) {
