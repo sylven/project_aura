@@ -14,6 +14,7 @@
 #include "core/BootPolicy.h"
 #include "core/Logger.h"
 #include "core/MemoryMonitor.h"
+#include "core/SafeRestart.h"
 #include "core/Watchdog.h"
 
 #include "modules/StorageManager.h"
@@ -88,7 +89,6 @@ UiController uiController(ui_context);
 bool ota_window_active = false;
 bool ota_lvgl_quiesced = false;
 uint32_t ota_quiesce_due_ms = 0;
-
 } // namespace
 
 void setup()
@@ -152,8 +152,11 @@ void loop()
         esp_wifi_stop();
         lvgl_port_prepare_restart();
         delay(50);
-        ESP.restart();
-        return;
+        // Delegate restart to Core 0 via IPC so Core 0 is the initiator:
+        // Core 0 disables its own interrupts first, then stalls Core 1 (safe in
+        // the IPC wait loop), then disables flash/PSRAM cache and resets.
+        // This eliminates the RUNSTALL timing race that caused "Cache disabled" panics.
+        safe_restart_via_core0();
     }
 
     const bool ota_busy = WebHandlersIsOtaBusy();
@@ -216,3 +219,4 @@ void loop()
     Watchdog::kick();
     delay(10);
 }
+

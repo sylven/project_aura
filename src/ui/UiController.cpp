@@ -25,6 +25,7 @@
 #include "config/AppConfig.h"
 #include "core/BootState.h"
 #include "core/Logger.h"
+#include "core/SafeRestart.h"
 #include "modules/StorageManager.h"
 #include "modules/NetworkManager.h"
 #include "modules/MqttManager.h"
@@ -465,7 +466,7 @@ void UiController::webRequestRestart() {
     esp_wifi_stop();
     lvgl_port_prepare_restart();
     delay(100);
-    ESP.restart();
+    safe_restart_via_core0();
 }
 
 void UiController::poll(uint32_t now) {
@@ -1162,7 +1163,7 @@ void UiController::mqtt_apply_pending() {
         esp_wifi_stop();
         lvgl_port_prepare_restart();
         delay(100);
-        ESP.restart();
+        safe_restart_via_core0();
     }
     if (publish_needed) {
         mqttManager.requestPublish();

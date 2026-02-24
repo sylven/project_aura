@@ -8,9 +8,11 @@
 
 #include <WiFi.h>
 #include <math.h>
+#include <esp_wifi.h>
 
 #include "config/AppConfig.h"
 #include "core/Logger.h"
+#include "core/SafeRestart.h"
 #include "lvgl_v8_port.h"
 #include "modules/NetworkManager.h"
 #include "modules/MqttManager.h"
@@ -699,14 +701,14 @@ void UiController::on_confirm_ok_event(lv_event_t *e) {
         esp_wifi_stop();
         lvgl_port_prepare_restart();
         delay(100);
-        ESP.restart();
+        safe_restart_via_core0();
     } else if (action == CONFIRM_FACTORY_RESET) {
         LOGW("UI", "factory reset requested");
         storage.clearAll();
         WiFi.disconnect(true, true);
         lvgl_port_prepare_restart();
         delay(100);
-        ESP.restart();
+        safe_restart_via_core0();
     }
 }
 
@@ -2103,4 +2105,3 @@ void UiController::on_boot_diag_errors(lv_event_t *e) {
         lv_obj_add_flag(objects.container_diag_errors, LV_OBJ_FLAG_HIDDEN);
     }
 }
-
