@@ -14,6 +14,7 @@
 #include <string.h>
 #include <time.h>
 #include <esp_system.h>
+#include <esp_wifi.h>
 
 #include "lvgl_v8_port.h"
 #include "ui/ui.h"
@@ -461,6 +462,7 @@ void UiController::webSetFirmwareUpdateScreen(bool active) {
 
 void UiController::webRequestRestart() {
     LOGW("UI", "web restart requested");
+    esp_wifi_stop();
     lvgl_port_prepare_restart();
     delay(100);
     ESP.restart();
@@ -1157,6 +1159,7 @@ void UiController::mqtt_apply_pending() {
     }
     if (pending.restart) {
         LOGI("UI", "MQTT restart requested");
+        esp_wifi_stop();
         lvgl_port_prepare_restart();
         delay(100);
         ESP.restart();

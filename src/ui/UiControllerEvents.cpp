@@ -696,6 +696,7 @@ void UiController::on_confirm_ok_event(lv_event_t *e) {
         LOGI("UI", "SEN66 device reset done");
     } else if (action == CONFIRM_RESTART) {
         LOGW("UI", "restart requested");
+        esp_wifi_stop();
         lvgl_port_prepare_restart();
         delay(100);
         ESP.restart();

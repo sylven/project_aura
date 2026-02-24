@@ -429,8 +429,9 @@ TimeManager::PollResult TimeManager::ntpPoll(uint32_t now_ms) {
                 return result;
             }
         }
-        if (now_ms - ntp_sync_start_ms_ > Config::NTP_SYNC_TIMEOUT_MS) {
-            uint32_t elapsed = now_ms - ntp_sync_start_ms_;
+        const uint32_t elapsed = now_ms - ntp_sync_start_ms_;
+        // Guard against sampling-order inversion where now_ms is taken before ntp_sync_start_ms_ is updated.
+        if (static_cast<int32_t>(elapsed) > static_cast<int32_t>(Config::NTP_SYNC_TIMEOUT_MS)) {
             LOGW("Time", "NTP sync timeout after %lu ms", static_cast<unsigned long>(elapsed));
             ntp_syncing_ = false;
             ntp_err_ = true;

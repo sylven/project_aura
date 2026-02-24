@@ -5,6 +5,7 @@
 // Purchase a Commercial License: see COMMERCIAL_LICENSE_SUMMARY.md
 
 #include <Arduino.h>
+#include <esp_wifi.h>
 
 #include "config/AppConfig.h"
 #include "config/AppData.h"
@@ -148,17 +149,19 @@ void loop()
 {
     if (WebHandlersConsumeRestartRequest()) {
         LOGI("OTA", "restarting now (main loop)");
+        esp_wifi_stop();
         lvgl_port_prepare_restart();
+        delay(50);
         ESP.restart();
         return;
     }
 
     const bool ota_busy = WebHandlersIsOtaBusy();
-    const uint32_t now = millis();
+    const uint32_t loop_now = millis();
     if (ota_busy && !ota_window_active) {
         ota_window_active = true;
         ota_lvgl_quiesced = false;
-        ota_quiesce_due_ms = now + OTA_UI_QUIESCE_DELAY_MS;
+        ota_quiesce_due_ms = loop_now + OTA_UI_QUIESCE_DELAY_MS;
     } else if (!ota_busy && ota_window_active) {
         ota_window_active = false;
         if (ota_lvgl_quiesced) {
@@ -172,7 +175,7 @@ void loop()
     }
 
     if (ota_busy) {
-        if (!ota_lvgl_quiesced && static_cast<int32_t>(now - ota_quiesce_due_ms) >= 0) {
+        if (!ota_lvgl_quiesced && static_cast<int32_t>(loop_now - ota_quiesce_due_ms) >= 0) {
             if (lvgl_port_pause()) {
                 ota_lvgl_quiesced = true;
                 LOGI("OTA", "LVGL paused during OTA transfer");
@@ -181,10 +184,10 @@ void loop()
             }
         }
         networkManager.poll();
-        storage.poll(now);
-        memoryMonitor.poll(now);
+        storage.poll(loop_now);
+        memoryMonitor.poll(loop_now);
         if (!ota_lvgl_quiesced) {
-            uiController.poll(now);
+            uiController.poll(loop_now);
         }
         Watchdog::kick();
         delay(1);
@@ -196,6 +199,7 @@ void loop()
     uiController.onSensorPoll(sensor_poll);
     chartsHistory.update(currentData, storage);
     networkManager.poll();
+    const uint32_t now = millis();
     BootPolicy::markStable(now,
                            boot_start_ms,
                            Config::SAFE_BOOT_STABLE_MS,
