@@ -37,7 +37,7 @@ namespace {
 
 WebHandlerContext *g_ctx = nullptr;
 constexpr uint32_t kDeferredActionDelayMs = 200;
-constexpr uint32_t kDeferredRestartDelayMs = 500;
+constexpr uint32_t kDeferredRestartDelayMs = 1500;
 bool g_deferred_wifi_start_sta = false;
 bool g_deferred_mqtt_sync = false;
 bool g_deferred_restart = false;
@@ -415,6 +415,17 @@ void WebHandlersPollDeferred() {
     if (g_deferred_restart && deadline_reached(now_ms, g_deferred_restart_due_ms)) {
         g_deferred_restart = false;
         g_deferred_restart_due_ms = 0;
+        LOGI("OTA", "deferred reboot: stopping web/wifi stack");
+        if (context->server) {
+            context->server->stop();
+        }
+        if (WiFi.getMode() != WIFI_MODE_NULL) {
+            WiFi.disconnect(true, true);
+            delay(80);
+            WiFi.mode(WIFI_OFF);
+            delay(120);
+        }
+        LOGI("OTA", "restarting now");
         ESP.restart();
     }
 }
@@ -1582,6 +1593,8 @@ void ota_handle_update() {
     server.send(status_code, "application/json", json);
 
     if (success) {
+        LOGI("OTA", "response sent, deferred reboot in %u ms",
+             static_cast<unsigned>(kDeferredRestartDelayMs));
         g_deferred_restart = true;
         g_deferred_restart_due_ms = millis() + kDeferredRestartDelayMs;
     } else {

@@ -1345,6 +1345,8 @@ function AuraDashboard() {
   const [otaUploadProgress, setOtaUploadProgress] = useState(0);
   const [otaUploadMessage, setOtaUploadMessage] = useState('');
   const otaUploadInProgress = otaUploadState === 'uploading';
+  const otaRestartPending = otaUploadState === 'success';
+  const otaBusy = otaUploadInProgress || otaRestartPending;
 
   // Device Name Editing
   const [deviceName, setDeviceName] = useState(PREVIEW_HOSTNAME);
@@ -1576,7 +1578,7 @@ function AuraDashboard() {
   }, []);
 
   useEffect(() => {
-    if (activeTab !== 'charts' || otaUploadInProgress) return;
+    if (activeTab !== 'charts' || otaBusy) return;
 
     const controller = new AbortController();
     const apiGroup = chartGroup === 'core' ? 'core' : chartGroup;
@@ -1603,10 +1605,10 @@ function AuraDashboard() {
       });
 
     return () => controller.abort();
-  }, [activeTab, chartRange, chartGroup, otaUploadInProgress]);
+  }, [activeTab, chartRange, chartGroup, otaBusy]);
 
   useEffect(() => {
-    if (activeTab !== 'sensors' || otaUploadInProgress) return;
+    if (activeTab !== 'sensors' || otaBusy) return;
 
     let active = true;
     const controller = new AbortController();
@@ -1636,10 +1638,10 @@ function AuraDashboard() {
       clearInterval(intervalId);
       controller.abort();
     };
-  }, [activeTab, otaUploadInProgress]);
+  }, [activeTab, otaBusy]);
 
   useEffect(() => {
-    if (otaUploadInProgress) return;
+    if (otaBusy) return;
 
     let active = true;
     const controller = new AbortController();
@@ -1675,10 +1677,10 @@ function AuraDashboard() {
       clearInterval(intervalId);
       controller.abort();
     };
-  }, [otaUploadInProgress]);
+  }, [otaBusy]);
 
   useEffect(() => {
-    if (activeTab !== 'events' || otaUploadInProgress) return;
+    if (activeTab !== 'events' || otaBusy) return;
 
     let active = true;
     const controller = new AbortController();
@@ -1710,7 +1712,7 @@ function AuraDashboard() {
       clearInterval(intervalId);
       controller.abort();
     };
-  }, [activeTab, otaUploadInProgress]);
+  }, [activeTab, otaBusy]);
 
   const chartData = Array.isArray(chartApiData) ? chartApiData : [];
   const sensorHistory = Array.isArray(sensorHistoryData) ? sensorHistoryData : [];
@@ -2156,7 +2158,7 @@ function AuraDashboard() {
               <div className="mt-3 pt-3 border-t border-gray-700/60 space-y-2">
                 <button
                   onClick={requestRestart}
-                  disabled={otaUploadState === 'uploading'}
+                  disabled={otaBusy}
                   className="w-full border py-2.5 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/40 transition-colors"
                 >
                   <RotateCw size={14} /> Reboot Device
@@ -2173,25 +2175,25 @@ function AuraDashboard() {
             </SettingGroup>
 
             <SettingGroup title="Firmware Update">
-              <input
-                ref={otaFileInputRef}
-                type="file"
-                accept=".bin"
-                onChange={selectFirmwareFile}
-                disabled={otaUploadState === 'uploading'}
-                className="block w-full text-xs text-gray-300 file:mr-3 file:rounded-md file:border file:border-gray-600 file:bg-gray-800 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-gray-200 hover:file:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed"
-              />
-              <button
-                onClick={uploadFirmware}
-                disabled={!otaFile || otaUploadState === 'uploading'}
-                className={`w-full mt-2 border py-2.5 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-colors ${
-                  !otaFile || otaUploadState === 'uploading'
+                <input
+                  ref={otaFileInputRef}
+                  type="file"
+                  accept=".bin"
+                  onChange={selectFirmwareFile}
+                  disabled={otaBusy}
+                  className="block w-full text-xs text-gray-300 file:mr-3 file:rounded-md file:border file:border-gray-600 file:bg-gray-800 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-gray-200 hover:file:bg-gray-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                />
+                <button
+                  onClick={uploadFirmware}
+                  disabled={!otaFile || otaBusy}
+                  className={`w-full mt-2 border py-2.5 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-colors ${
+                  !otaFile || otaBusy
                     ? 'bg-gray-800/70 text-gray-500 border-gray-700 cursor-not-allowed'
                     : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/40'
                 }`}
               >
                 <UploadIcon size={14} />
-                {otaUploadState === 'uploading' ? 'Uploading...' : 'Update Firmware'}
+                {otaUploadState === 'uploading' ? 'Uploading...' : (otaRestartPending ? 'Rebooting...' : 'Update Firmware')}
               </button>
               {otaUploadState === 'uploading' && (
                 <div className="mt-2">

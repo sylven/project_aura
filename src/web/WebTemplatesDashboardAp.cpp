@@ -633,6 +633,7 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
     let refreshBusy = false;
     let deviceClockRef = null;
     let otaUploadInFlight = false;
+    let otaRestartPending = false;
 
     function selectTab(tab) {
       activeTab = tab;
@@ -923,7 +924,7 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
       const progressEl = $("otaProgress");
       const uploadBtn = $("otaUploadBtn");
       const file = fileInput.files && fileInput.files[0];
-      if (otaUploadInFlight) {
+      if (otaUploadInFlight || otaRestartPending) {
         return;
       }
       if (!file) {
@@ -955,13 +956,14 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
       xhr.onreadystatechange = () => {
         if (xhr.readyState !== XMLHttpRequest.DONE) return;
         otaUploadInFlight = false;
-        if (uploadBtn) {
-          uploadBtn.disabled = false;
-        }
         let payload = null;
         try { payload = JSON.parse(xhr.responseText || "{}"); } catch (_e) {}
 
         if (xhr.status >= 200 && xhr.status < 300 && payload && payload.success === true) {
+          otaRestartPending = true;
+          if (uploadBtn) {
+            uploadBtn.disabled = true;
+          }
           progressEl.style.width = "100%";
           statusEl.textContent = payload.message || "Firmware uploaded. Device will reboot.";
           statusEl.className = "note ok";
@@ -969,6 +971,10 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
           return;
         }
 
+        otaRestartPending = false;
+        if (uploadBtn) {
+          uploadBtn.disabled = false;
+        }
         const errorText = (payload && payload.error) || ("Upload failed (HTTP " + (xhr.status || 0) + ")");
         statusEl.textContent = errorText;
         statusEl.className = "note danger";
@@ -976,6 +982,7 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
 
       xhr.onerror = () => {
         otaUploadInFlight = false;
+        otaRestartPending = false;
         if (uploadBtn) {
           uploadBtn.disabled = false;
         }
@@ -987,7 +994,7 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
     }
 
     async function refreshState() {
-      if (otaUploadInFlight) return;
+      if (otaUploadInFlight || otaRestartPending) return;
       const payload = await getJson("/api/state");
       stateCache = payload;
       renderHeader(payload);
@@ -998,7 +1005,7 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
     }
 
     async function refreshCharts() {
-      if (otaUploadInFlight) return;
+      if (otaUploadInFlight || otaRestartPending) return;
       const payload = await getJson(
         "/api/charts?group=" + encodeURIComponent(chartGroup) +
         "&window=" + encodeURIComponent(chartWindow)
@@ -1007,13 +1014,13 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
     }
 
     async function refreshEvents() {
-      if (otaUploadInFlight) return;
+      if (otaUploadInFlight || otaRestartPending) return;
       const payload = await getJson("/api/events");
       renderEvents(payload);
     }
 
     async function refreshActive() {
-      if (refreshBusy || otaUploadInFlight) return;
+      if (refreshBusy || otaUploadInFlight || otaRestartPending) return;
       refreshBusy = true;
       let hadError = false;
 
@@ -1055,7 +1062,7 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
       });
 
       $("refreshBtn").addEventListener("click", async () => {
-        if (otaUploadInFlight) {
+        if (otaUploadInFlight || otaRestartPending) {
           statusText("OTA upload in progress. Wait for completion.", "warn");
           return;
         }
