@@ -531,7 +531,8 @@ void AuraNetworkManager::startSta() {
         delay(100);
     }
     if (force_reset) {
-        WiFi.disconnect(true);
+        // Keep radio started in STA mode; reconnect should not power WiFi off.
+        WiFi.disconnect(false);
     } else {
         WiFi.disconnect();
     }
