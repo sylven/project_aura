@@ -835,7 +835,9 @@ const HeroMetric = ({ value, status, history = [] }) => {
       : delta3h < -20
         ? 'text-cyan-300'
         : 'text-gray-300';
-  const progressWidth = isFiniteNumber(safeValue) ? Math.min((safeValue / thresholds.co2.bad) * 100, 100) : 0;
+  const progressWidth = isFiniteNumber(safeValue)
+    ? Math.min(100, Math.max(0, ((safeValue - 400) / (2000 - 400)) * 100))
+    : 0;
 
   return (
     <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-5 md:p-7 border border-gray-700/60 shadow-xl h-full flex flex-col">
@@ -1965,14 +1967,18 @@ function AuraDashboard() {
 
   useEffect(() => {
     if (isEditingName) return;
-    const savedDisplayName =
+    const localDisplayName =
+      typeof settings.displayName === 'string' && settings.displayName.trim().length > 0
+        ? settings.displayName.trim()
+        : null;
+    const apiDisplayName =
       typeof stateSettings.displayName === 'string' && stateSettings.displayName.trim().length > 0
         ? stateSettings.displayName.trim()
         : null;
-    const resolved = savedDisplayName || stateConnectivity.hostname || PREVIEW_HOSTNAME;
+    const resolved = localDisplayName || apiDisplayName || stateConnectivity.hostname || PREVIEW_HOSTNAME;
     setDeviceName(resolved);
     setTempDeviceName(resolved);
-  }, [isEditingName, stateSettings.displayName, stateConnectivity.hostname]);
+  }, [isEditingName, settings.displayName, stateSettings.displayName, stateConnectivity.hostname]);
   
   const fallbackAlerts = [
     { time: '14:32', type: 'CO2', message: 'Threshold exceeded (>1000 ppm)', severity: 'warning' },

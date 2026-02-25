@@ -1286,6 +1286,8 @@ void UiController::update_led_indicators() {
                                   : lv_obj_add_flag(objects.dot_ah_1, LV_OBJ_FLAG_HIDDEN);
     if (objects.dot_pm25_1) visible ? lv_obj_clear_flag(objects.dot_pm25_1, LV_OBJ_FLAG_HIDDEN)
                                     : lv_obj_add_flag(objects.dot_pm25_1, LV_OBJ_FLAG_HIDDEN);
+    if (objects.dot_pm05) visible ? lv_obj_clear_flag(objects.dot_pm05, LV_OBJ_FLAG_HIDDEN)
+                                  : lv_obj_add_flag(objects.dot_pm05, LV_OBJ_FLAG_HIDDEN);
     if (objects.dot_pm10_pro) visible ? lv_obj_clear_flag(objects.dot_pm10_pro, LV_OBJ_FLAG_HIDDEN)
                                       : lv_obj_add_flag(objects.dot_pm10_pro, LV_OBJ_FLAG_HIDDEN);
     if (objects.dot_pm1) visible ? lv_obj_clear_flag(objects.dot_pm1, LV_OBJ_FLAG_HIDDEN)
@@ -1593,6 +1595,14 @@ void UiController::init_ui_defaults() {
         lv_obj_add_flag(objects.btn_co_range_24h, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_CHECKABLE);
         lv_obj_set_ext_click_area(objects.btn_co_range_24h, 12);
     }
+    if (objects.btn_wifi_reconnect) {
+        // Action button: keep visual CHECKED feedback fully controlled from code.
+        lv_obj_clear_flag(objects.btn_wifi_reconnect, LV_OBJ_FLAG_CHECKABLE);
+    }
+    if (objects.btn_wifi_start_ap) {
+        // AP state indicator is managed manually in update_wifi_ui().
+        lv_obj_clear_flag(objects.btn_wifi_start_ap, LV_OBJ_FLAG_CHECKABLE);
+    }
 
     if (objects.wifi_status_icon_1) lv_obj_add_flag(objects.wifi_status_icon_1, LV_OBJ_FLAG_HIDDEN);
     if (objects.wifi_status_icon_2) lv_obj_add_flag(objects.wifi_status_icon_2, LV_OBJ_FLAG_HIDDEN);
@@ -1615,17 +1625,25 @@ void UiController::init_ui_defaults() {
         lv_obj_set_style_bg_color(objects.btn_wifi_reconnect, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);
         lv_obj_set_style_border_color(objects.btn_wifi_reconnect, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);
         lv_obj_set_style_shadow_color(objects.btn_wifi_reconnect, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);
+        lv_obj_set_style_bg_color(objects.btn_wifi_reconnect, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED | LV_STATE_CHECKED);
+        lv_obj_set_style_border_color(objects.btn_wifi_reconnect, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED | LV_STATE_CHECKED);
+        lv_obj_set_style_shadow_color(objects.btn_wifi_reconnect, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED | LV_STATE_CHECKED);
     }
     if (objects.label_btn_wifi_reconnect) {
         lv_obj_set_style_text_color(objects.label_btn_wifi_reconnect, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);
+        lv_obj_set_style_text_color(objects.label_btn_wifi_reconnect, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED | LV_STATE_CHECKED);
     }
     if (objects.btn_wifi_start_ap) {
         lv_obj_set_style_bg_color(objects.btn_wifi_start_ap, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);
         lv_obj_set_style_border_color(objects.btn_wifi_start_ap, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);
         lv_obj_set_style_shadow_color(objects.btn_wifi_start_ap, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);
+        lv_obj_set_style_bg_color(objects.btn_wifi_start_ap, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED | LV_STATE_CHECKED);
+        lv_obj_set_style_border_color(objects.btn_wifi_start_ap, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED | LV_STATE_CHECKED);
+        lv_obj_set_style_shadow_color(objects.btn_wifi_start_ap, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED | LV_STATE_CHECKED);
     }
     if (objects.label_btn_wifi_start_ap) {
         lv_obj_set_style_text_color(objects.label_btn_wifi_start_ap, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);
+        lv_obj_set_style_text_color(objects.label_btn_wifi_start_ap, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED | LV_STATE_CHECKED);
     }
     if (objects.btn_dac_settings) {
         lv_obj_set_style_bg_color(objects.btn_dac_settings, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);

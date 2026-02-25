@@ -178,6 +178,44 @@ void UiController::update_wifi_ui() {
     AuraNetworkManager::WifiState wifi_state = networkManager.state();
     const String &wifi_ssid = networkManager.ssid();
     uint8_t wifi_retry_count = networkManager.retryCount();
+
+    // page_wifi is created lazily, so these runtime style/flag guards must be
+    // applied here (not only in init_ui_defaults()) once objects actually exist.
+    if (objects.btn_wifi_reconnect) {
+        lv_obj_clear_flag(objects.btn_wifi_reconnect, LV_OBJ_FLAG_CHECKABLE);
+        lv_obj_set_style_bg_color(objects.btn_wifi_reconnect, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);
+        lv_obj_set_style_border_color(objects.btn_wifi_reconnect, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);
+        lv_obj_set_style_shadow_color(objects.btn_wifi_reconnect, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);
+        lv_obj_set_style_bg_color(objects.btn_wifi_reconnect, color_inactive(),
+                                  LV_PART_MAIN | LV_STATE_DISABLED | LV_STATE_CHECKED);
+        lv_obj_set_style_border_color(objects.btn_wifi_reconnect, color_inactive(),
+                                      LV_PART_MAIN | LV_STATE_DISABLED | LV_STATE_CHECKED);
+        lv_obj_set_style_shadow_color(objects.btn_wifi_reconnect, color_inactive(),
+                                      LV_PART_MAIN | LV_STATE_DISABLED | LV_STATE_CHECKED);
+    }
+    if (objects.label_btn_wifi_reconnect) {
+        lv_obj_set_style_text_color(objects.label_btn_wifi_reconnect, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);
+        lv_obj_set_style_text_color(objects.label_btn_wifi_reconnect, color_inactive(),
+                                    LV_PART_MAIN | LV_STATE_DISABLED | LV_STATE_CHECKED);
+    }
+    if (objects.btn_wifi_start_ap) {
+        lv_obj_clear_flag(objects.btn_wifi_start_ap, LV_OBJ_FLAG_CHECKABLE);
+        lv_obj_set_style_bg_color(objects.btn_wifi_start_ap, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);
+        lv_obj_set_style_border_color(objects.btn_wifi_start_ap, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);
+        lv_obj_set_style_shadow_color(objects.btn_wifi_start_ap, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);
+        lv_obj_set_style_bg_color(objects.btn_wifi_start_ap, color_inactive(),
+                                  LV_PART_MAIN | LV_STATE_DISABLED | LV_STATE_CHECKED);
+        lv_obj_set_style_border_color(objects.btn_wifi_start_ap, color_inactive(),
+                                      LV_PART_MAIN | LV_STATE_DISABLED | LV_STATE_CHECKED);
+        lv_obj_set_style_shadow_color(objects.btn_wifi_start_ap, color_inactive(),
+                                      LV_PART_MAIN | LV_STATE_DISABLED | LV_STATE_CHECKED);
+    }
+    if (objects.label_btn_wifi_start_ap) {
+        lv_obj_set_style_text_color(objects.label_btn_wifi_start_ap, color_inactive(), LV_PART_MAIN | LV_STATE_DISABLED);
+        lv_obj_set_style_text_color(objects.label_btn_wifi_start_ap, color_inactive(),
+                                    LV_PART_MAIN | LV_STATE_DISABLED | LV_STATE_CHECKED);
+    }
+
     if (objects.label_wifi_status_value) {
         const char *status = UiText::StatusOff();
         if (wifi_enabled) {
@@ -237,7 +275,11 @@ void UiController::update_wifi_ui() {
     }
     if (objects.btn_wifi_reconnect) {
         bool can_reconnect = wifi_enabled && !wifi_ssid.isEmpty();
+        if (!can_reconnect) {
+            lv_obj_clear_state(objects.btn_wifi_reconnect, LV_STATE_CHECKED);
+        }
         set_button_enabled(objects.btn_wifi_reconnect, can_reconnect);
+        set_button_enabled(objects.label_btn_wifi_reconnect, can_reconnect);
     }
     if (objects.btn_wifi_start_ap) {
         if (wifi_enabled && wifi_state == AuraNetworkManager::WIFI_STATE_AP_CONFIG) {
@@ -246,6 +288,7 @@ void UiController::update_wifi_ui() {
             lv_obj_clear_state(objects.btn_wifi_start_ap, LV_STATE_CHECKED);
         }
         set_button_enabled(objects.btn_wifi_start_ap, wifi_enabled);
+        set_button_enabled(objects.label_btn_wifi_start_ap, wifi_enabled);
     }
     sync_wifi_toggle_state();
 }

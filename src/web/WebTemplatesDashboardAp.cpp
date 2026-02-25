@@ -713,7 +713,9 @@ function renderHeroMetric(sensors, historyRows) {
   const firstCo2 = validPts.length ? validPts[0].co2 : null;
   const delta3h = (isNum(v) && isNum(firstCo2)) ? v - firstCo2 : null;
   const deltaColor = !isNum(delta3h) ? '#9ca3af' : delta3h > 20 ? '#fdba74' : delta3h < -20 ? '#a5f3fc' : '#d1d5db';
-  const progressW = v !== null ? Math.min((v / thresholds.co2.bad) * 100, 100) : 0;
+  const progressW = v !== null
+    ? Math.min(100, Math.max(0, ((v - 400) / (2000 - 400)) * 100))
+    : 0;
 
   const miniSvg = co2Data.length >= 2 ? buildMiniChartSvg(co2Data, 'co2', color) : '';
 
@@ -1189,6 +1191,21 @@ let toggleMsgTimer = null;
 let chartsRefreshToken = 0;
 let chartsRefreshController = null;
 
+function resolveHeaderDeviceName() {
+  const displayName =
+    (typeof settings.displayName === 'string' && settings.displayName.trim())
+      ? settings.displayName.trim()
+      : '';
+  const net = (stateCache && stateCache.network) || {};
+  return displayName || net.hostname || 'aura';
+}
+
+function renderHeaderDeviceName() {
+  const el = document.getElementById('deviceNameLabel');
+  if (!el) return;
+  el.textContent = resolveHeaderDeviceName();
+}
+
 // ─────────────────────────────────────────────
 // API helpers
 // ─────────────────────────────────────────────
@@ -1417,6 +1434,8 @@ function applySettingsToUI(apiSettings, force, toggleOverrideKey) {
     nameDirty = false;
     updateNameBtn('idle');
   }
+
+  renderHeaderDeviceName();
 
   Object.assign(savedSettings, settings);
   if (!force && settingsSaveStatus !== 'error') {
@@ -1681,10 +1700,7 @@ async function refreshState() {
   }
 
   // Device name
-  const s = (payload && payload.settings) || {};
-  const net = (payload && payload.network) || {};
-  const name = (typeof s.display_name === 'string' && s.display_name.trim()) ? s.display_name.trim() : (net.hostname || 'aura');
-  document.getElementById('deviceNameLabel').textContent = name;
+  renderHeaderDeviceName();
 
   // Sensors tab
   renderHeroMetric(payload.sensors, historyCache);
