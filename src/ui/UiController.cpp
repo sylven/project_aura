@@ -332,7 +332,6 @@ bool UiController::webSetUnitsC(bool units_c) {
             date_units_mdy = expected_mdy;
             storage.config().units_mdy = expected_mdy;
             clock_ui_dirty = true;
-            update_clock_labels();
         }
         return true;
     }
@@ -347,13 +346,13 @@ bool UiController::webSetUnitsC(bool units_c) {
         date_units_mdy = previous_units_mdy;
         storage.config().units_c = previous_units_c;
         storage.config().units_mdy = previous_units_mdy;
-        update_ui();
+        clock_ui_dirty = true;
+        data_dirty = true;
         LOGE("UI", "failed to persist temperature unit change");
         return false;
     }
     clock_ui_dirty = true;
-    update_clock_labels();
-    update_ui();
+    data_dirty = true;
     mqttManager.requestPublish();
     return true;
 }
