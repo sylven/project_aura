@@ -10,6 +10,7 @@ OUT_INC = PROJECT_DIR / "src" / "web" / "generated" / "WebTemplatesDashboardApGz
 
 START_MARKER = 'const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(\n'
 END_MARKER = ')HTML_DASH_AP";'
+# NOTE: these markers must stay in sync with WebTemplatesDashboardAp.cpp.
 
 
 def extract_dashboard_html(source_path: Path) -> str:
