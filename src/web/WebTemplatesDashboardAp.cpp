@@ -8,6 +8,8 @@
 
 namespace WebTemplates {
 
+// NOTE: keep this raw HTML block as source for scripts/generate_dashboard_gzip.py.
+// It is intentionally excluded from compilation to avoid duplicate flash usage.
 #if 0
 const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
 <!doctype html>
