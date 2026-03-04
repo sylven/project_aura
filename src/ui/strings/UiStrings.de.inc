@@ -149,7 +149,7 @@
     "EIGEN",
     "VORLAGEN",
     "BEISPIEL:",
-    "Custom-Theme einrichten:\n- Project Aura zuerst mit WLAN verbinden\n- Im Browser http://aura.local/theme öffnen oder QR-Code scannen\n- Falls .local im Netzwerk nicht funktioniert, nutze http://<device-ip>/theme\n- Mit Zurück speichern",
+    "Custom-Theme einrichten:\n- Project Aura zuerst mit WLAN verbinden\n- Im Browser http://aura.local/theme \nöffnen oder QR-Code scannen.\nWenn .local im Netzwerk nicht funktioniert,\n öffne stattdessen {{IP_URL}}.\n- Mit Zurück speichern",
     "Wenn .local in deinem Netzwerk nicht funktioniert, öffne stattdessen {{IP_URL}}.",
     "LUEFTER\nSTEUER.",
     "Lueftersteuerung",

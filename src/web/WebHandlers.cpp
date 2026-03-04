@@ -1520,16 +1520,58 @@ void theme_handle_root() {
         send_html_stream(*context->server, html);
         return;
     }
+    send_html_stream_progmem(
+        *context->server,
+        WebTemplates::kThemePageTemplateGzip,
+        WebTemplates::kThemePageTemplateGzipSize,
+        true
+    );
+}
+
+void theme_handle_state() {
+    WebHandlerContext *context = ctx();
+    if (!context || !context->server || !context->theme_manager) {
+        return;
+    }
+
+    WebServer &server = *context->server;
+    auto send_theme_error = [&server](int status_code, const char *message) {
+        ArduinoJson::JsonDocument doc;
+        doc["success"] = false;
+        doc["error"] = message;
+        String json;
+        serializeJson(doc, json);
+        server.send(status_code, "application/json", json);
+    };
+
+    bool wifi_ready = context->wifi_is_connected && context->wifi_is_connected();
+    if (!wifi_ready) {
+        send_theme_error(403, "WiFi required");
+        return;
+    }
+    if (!context->theme_ui_open || !*context->theme_ui_open) {
+        send_theme_error(409, "Open Theme screen to enable");
+        return;
+    }
+    if (!context->theme_manager->isCustomScreenOpen()) {
+        send_theme_error(409, "Open Custom Theme screen to enable");
+        return;
+    }
+
     ThemeColors colors = context->theme_manager->previewOrCurrent();
-    String html = FPSTR(WebTemplates::kThemePageTemplate);
-    html.replace("{{BG_COLOR}}", theme_color_to_hex(colors.screen_bg));
-    html.replace("{{CARD_TOP}}", theme_color_to_hex(colors.card_bg));
-    html.replace("{{CARD_BOTTOM}}", theme_color_to_hex(colors.gradient_color));
-    html.replace("{{CARD_BORDER}}", theme_color_to_hex(colors.card_border));
-    html.replace("{{SHADOW_COLOR}}", theme_color_to_hex(colors.shadow_color));
-    html.replace("{{TEXT_COLOR}}", theme_color_to_hex(colors.text_primary));
-    html.replace("{{CARD_GRADIENT_BOOL}}", colors.gradient_enabled ? "true" : "false");
-    send_html_stream(*context->server, html);
+    ArduinoJson::JsonDocument doc;
+    doc["success"] = true;
+    doc["bg_color"] = theme_color_to_hex(colors.screen_bg);
+    doc["card_top"] = theme_color_to_hex(colors.card_bg);
+    doc["card_bottom"] = theme_color_to_hex(colors.gradient_color);
+    doc["card_gradient"] = colors.gradient_enabled;
+    doc["card_border"] = theme_color_to_hex(colors.card_border);
+    doc["shadow_color"] = theme_color_to_hex(colors.shadow_color);
+    doc["text_color"] = theme_color_to_hex(colors.text_primary);
+
+    String json;
+    serializeJson(doc, json);
+    server.send(200, "application/json", json);
 }
 
 void theme_handle_apply() {

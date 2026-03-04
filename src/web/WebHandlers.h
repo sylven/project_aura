@@ -77,6 +77,7 @@ void diag_handle_root();
 void mqtt_handle_root();
 void mqtt_handle_save();
 void theme_handle_root();
+void theme_handle_state();
 void theme_handle_apply();
 void dac_handle_root();
 void dac_handle_state();

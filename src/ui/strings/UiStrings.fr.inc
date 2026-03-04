@@ -149,7 +149,7 @@
     "PERSO",
     "PRÉSETS",
     "EXEMPLE:",
-    "Pour configurer le thème personnalisé:\n- Connectez d'abord Project Aura au WI-FI\n- Ouvrez http://aura.local/theme dans le navigateur ou scannez le QR.\n- Si .local ne fonctionne pas sur votre réseau, utilisez http://<device-ip>/theme\n- Enregistrez avec Retour",
+    "Pour configurer le thème personnalisé:\n- Connectez d'abord Project Aura au WI-FI\n- Ouvrez http://aura.local/theme dans le \nnavigateur ou scannez le QR.\nSi .local ne fonctionne pas sur votre réseau,\n ouvrez {{IP_URL}}.\n- Enregistrez avec Retour",
     "Si .local ne fonctionne pas sur votre réseau, ouvrez {{IP_URL}}.",
     "CTRL\nVENTILO",
     "Controle ventilateur",

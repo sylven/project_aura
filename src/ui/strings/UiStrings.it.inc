@@ -149,7 +149,7 @@
     "PERSON.",
     "PRESET",
     "ESEMPIO:",
-    "Per configurare il tema personalizzato:\n- Connetti prima Project Aura al WI-FI\n- Apri http://aura.local/theme nel browser o scansiona il QR.\n- Se .local non funziona nella tua rete, usa http://<device-ip>/theme\n- Salva con Indietro",
+    "Per configurare il tema personalizzato:\n- Connetti prima Project Aura al WI-FI\n- Apri http://aura.local/theme nel \nbrowser o scansiona il QR.\nSe .local non funziona nella tua rete,\n apri {{IP_URL}}.\n- Salva con Indietro",
     "Se .local non funziona nella tua rete, apri {{IP_URL}}.",
     "CTRL\nVENTOLA",
     "Controllo ventola",

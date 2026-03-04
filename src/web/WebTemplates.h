@@ -13,6 +13,8 @@ extern const uint8_t kDashboardPageTemplateApGzip[] PROGMEM;
 extern const size_t kDashboardPageTemplateApGzipSize;
 extern const uint8_t kDacPageTemplateGzip[] PROGMEM;
 extern const size_t kDacPageTemplateGzipSize;
+extern const uint8_t kThemePageTemplateGzip[] PROGMEM;
+extern const size_t kThemePageTemplateGzipSize;
 
 static const char kWifiListScanning[] PROGMEM = R"HTML(
 <div class="network-item disabled">
@@ -1236,6 +1238,9 @@ static const char kMqttSavePage[] PROGMEM = R"HTML(
 </html>
 )HTML";
 
+// NOTE: keep this raw HTML block as source for scripts/generate_theme_gzip.py.
+// It is intentionally excluded from compilation to avoid duplicate flash usage.
+#if 0
 static const char kThemePageTemplate[] PROGMEM = R"HTML(
 <!DOCTYPE html>
 <html lang="en">
@@ -1589,13 +1594,13 @@ static const char kThemePageTemplate[] PROGMEM = R"HTML(
 
   <script>
     const state = {
-      bg_color: "{{BG_COLOR}}",
-      card_top: "{{CARD_TOP}}",
-      card_bottom: "{{CARD_BOTTOM}}",
-      card_gradient: {{CARD_GRADIENT_BOOL}},
-      card_border: "{{CARD_BORDER}}",
-      shadow_color: "{{SHADOW_COLOR}}",
-      text_color: "{{TEXT_COLOR}}"
+      bg_color: "#0f172a",
+      card_top: "#1e293b",
+      card_bottom: "#334155",
+      card_gradient: true,
+      card_border: "#334155",
+      shadow_color: "#0f172a",
+      text_color: "#f1f5f9"
     };
 
     const elements = {
@@ -1614,6 +1619,18 @@ static const char kThemePageTemplate[] PROGMEM = R"HTML(
       if (val[0] !== "#") val = "#" + val;
       if (val.length === 4) val = "#" + val[1] + val[1] + val[2] + val[2] + val[3] + val[3];
       return val.length === 7 ? val.toLowerCase() : "#000000";
+    };
+
+    const applyRemoteState = (payload) => {
+      if (!payload || typeof payload !== "object") return;
+      if (typeof payload.bg_color === "string") state.bg_color = normalizeHex(payload.bg_color);
+      if (typeof payload.card_top === "string") state.card_top = normalizeHex(payload.card_top);
+      if (typeof payload.card_bottom === "string") state.card_bottom = normalizeHex(payload.card_bottom);
+      if (typeof payload.card_border === "string") state.card_border = normalizeHex(payload.card_border);
+      if (typeof payload.shadow_color === "string") state.shadow_color = normalizeHex(payload.shadow_color);
+      if (typeof payload.text_color === "string") state.text_color = normalizeHex(payload.text_color);
+      if (typeof payload.card_gradient === "boolean") state.card_gradient = payload.card_gradient;
+      if (typeof payload.card_gradient === "number") state.card_gradient = payload.card_gradient !== 0;
     };
 
     const render = () => {
@@ -1721,11 +1738,24 @@ static const char kThemePageTemplate[] PROGMEM = R"HTML(
       }
     });
 
+    const loadThemeState = async () => {
+      try {
+        const res = await fetch("/theme/state", { cache: "no-store" });
+        if (!res.ok) return;
+        const body = await res.json();
+        if (!body || body.success !== true) return;
+        applyRemoteState(body);
+      } catch (_) {}
+      render();
+    };
+
     render();
+    loadThemeState();
   </script>
 </body>
 </html>
 )HTML";
+#endif
 
 static const char kThemeLockedPage[] PROGMEM = R"HTML(
 <!DOCTYPE html>

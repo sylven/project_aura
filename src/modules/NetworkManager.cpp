@@ -205,6 +205,7 @@ void AuraNetworkManager::registerServerRoutes() {
     server_.on("/mqtt", HTTP_GET, mqtt_handle_root);
     server_.on("/mqtt", HTTP_POST, mqtt_handle_save);
     server_.on("/theme", HTTP_GET, theme_handle_root);
+    server_.on("/theme/state", HTTP_GET, theme_handle_state);
     server_.on("/theme/apply", HTTP_POST, theme_handle_apply);
     server_.on("/dac", HTTP_GET, dac_handle_root);
     server_.on("/dac/state", HTTP_GET, dac_handle_state);

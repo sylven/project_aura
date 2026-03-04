@@ -149,7 +149,7 @@
     "PERS.",
     "PRESET",
     "EXEMPLO:",
-    "Para configurar tema personalizado:\n- Conecte o Project Aura ao WI-FI primeiro\n- Abra http://aura.local/theme no navegador ou escaneie o QR.\n- Se .local nao funcionar na sua rede, use http://<device-ip>/theme\n- Salve com Voltar",
+    "Para configurar tema personalizado:\n- Conecte o Project Aura ao WI-FI primeiro\n- Abra http://aura.local/theme no \nnavegador ou escaneie o QR.\nSe .local nao funcionar na sua rede,\n abra {{IP_URL}}.\n- Salve com Voltar",
     "Se .local nao funcionar na sua rede, abra {{IP_URL}}.",
     "CTRL\nVENTOINHA",
     "Controle ventoinha",

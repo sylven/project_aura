@@ -149,7 +149,7 @@
     "自定义",
     "预设",
     "示例:",
-    "配置自定义主题:\n- 先将 Project Aura 连接到 WI-FI\n- 打开 http://aura.local/theme 或扫描二维码\n- 如果 .local 无法打开, 请使用 http://<device-ip>/theme\n- 按 返回 保存",
+    "配置自定义主题:\n- 先将 Project Aura 连接到 WI-FI\n- 打开 http://aura.local/theme\n 或扫描二维码.\n如果 .local 无法打开,\n 请打开 {{IP_URL}}.\n- 按 返回 保存",
     "如果 .local 无法打开, 请使用 {{IP_URL}}",
     "风量\n控制",
     "风量控制",

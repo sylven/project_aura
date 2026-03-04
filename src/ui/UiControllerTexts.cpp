@@ -7,6 +7,7 @@
 #include "ui/UiController.h"
 
 #include <stdio.h>
+#include <WiFi.h>
 
 #include "ui/UiText.h"
 #include "modules/NetworkManager.h"
@@ -188,8 +189,23 @@ void UiController::update_theme_texts() {
     if (objects.label_theme_custom_text) {
         String custom_info = UiText::LabelThemeCustomInfo();
         const String theme_url = networkManager.localUrl("/theme");
+        String ip_url = "http://<device-ip>/theme";
+        const bool wifi_enabled = networkManager.isEnabled();
+        const AuraNetworkManager::WifiState wifi_state = networkManager.state();
+        const bool sta_mode = wifi_enabled && (wifi_state == AuraNetworkManager::WIFI_STATE_STA_CONNECTED);
+        if (sta_mode) {
+            const IPAddress ip = WiFi.localIP();
+            if (ip[0] != 0 || ip[1] != 0 || ip[2] != 0 || ip[3] != 0) {
+                ip_url = "http://";
+                ip_url += ip.toString();
+                ip_url += "/theme";
+            }
+        }
         custom_info.replace(UiText::ThemePortalUrl(), theme_url);
         custom_info.replace("http://aura.local/theme", theme_url);
+        custom_info.replace("{{IP_URL}}", ip_url);
+        custom_info.replace("http://<device-ip>/theme", ip_url);
+        custom_info.replace("http://<device ip>/theme", ip_url);
         safe_label_set_text(objects.label_theme_custom_text, custom_info.c_str());
     }
     if (objects.label_theme_preview_hum_title) safe_label_set_text(objects.label_theme_preview_hum_title, UiText::LabelHumidityTitle());

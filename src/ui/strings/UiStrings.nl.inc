@@ -149,7 +149,7 @@
     "PERS.",
     "PRESETS",
     "VOORBEELD:",
-    "Aangepast thema instellen:\n- Verbind Project Aura eerst met WI-FI\n- Open http://aura.local/theme in de browser of scan de QR-code.\n- Werkt .local niet op jouw netwerk, gebruik dan http://<device-ip>/theme\n- Sla op met Terug",
+    "Aangepast thema instellen:\n- Verbind Project Aura eerst met WI-FI\n- Open http://aura.local/theme in de \nbrowser of scan de QR-code.\nWerkt .local niet op jouw netwerk,\n open {{IP_URL}}.\n- Sla op met Terug",
     "Werkt .local niet op je netwerk, open dan {{IP_URL}}.",
     "VENT.\nREGELING",
     "Ventilatorregeling",

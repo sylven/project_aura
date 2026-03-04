@@ -149,7 +149,7 @@
     "PERSONAL",
     "PRESETS",
     "EJEMPLO:",
-    "Para configurar tema personalizado:\n- Conecta Project Aura a WI-FI primero\n- Abre http://aura.local/theme en el navegador o escanea el QR.\n- Si .local no funciona en tu red, usa http://<device-ip>/theme\n- Guarda pulsando Atrás",
+    "Para configurar tema personalizado:\n- Conecta Project Aura a WI-FI primero\n- Abre http://aura.local/theme en \nel navegador o escanea el QR.\nSi .local no funciona en tu red,\n abre {{IP_URL}}.\n- Guarda pulsando Atrás",
     "Si .local no funciona en tu red, abre {{IP_URL}}.",
     "CTRL\nVENTIL.",
     "Control ventilador",
