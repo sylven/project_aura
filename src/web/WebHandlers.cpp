@@ -52,9 +52,12 @@ constexpr size_t kEventsApiMaxEntries = 48;
 constexpr size_t kWebDisplayNameMaxLen = 32;
 constexpr size_t kWifiScanMaxItems = 15;
 constexpr size_t kDiagMaxErrorItems = 12;
-constexpr size_t kHttpStreamChunkSize = 4096;
-constexpr uint16_t kHttpStreamMaxZeroWrites = 300;
+constexpr size_t kHttpStreamChunkSize = 1460;
+constexpr uint16_t kHttpStreamMaxZeroWrites = 12;
 constexpr uint8_t kHttpStreamYieldMs = 1;
+constexpr uint32_t kHttpStreamMaxDurationMs = 20000;
+constexpr uint32_t kHttpStreamNoProgressTimeoutMs = 3000;
+constexpr uint32_t kHttpStreamSlowWriteWarnMs = 200;
 constexpr const char kApiErrorOtaBusyJson[] =
     "{\"success\":false,\"error\":\"OTA upload in progress\","
     "\"error_code\":\"OTA_BUSY\",\"ota_busy\":true}";
@@ -404,35 +407,99 @@ void send_no_store_headers(WebServer &server) {
     server.sendHeader("Expires", "0");
 }
 
-bool stream_client_bytes(NetworkClient &client, const uint8_t *data, size_t size, size_t &sent) {
+enum class StreamAbortReason : uint8_t {
+    None = 0,
+    Disconnected,
+    ZeroWriteLimit,
+    NoProgressTimeout,
+    TotalTimeout
+};
+
+const char *stream_abort_reason_text(StreamAbortReason reason) {
+    switch (reason) {
+        case StreamAbortReason::Disconnected:
+            return "client_disconnected";
+        case StreamAbortReason::ZeroWriteLimit:
+            return "zero_write_limit";
+        case StreamAbortReason::NoProgressTimeout:
+            return "no_progress_timeout";
+        case StreamAbortReason::TotalTimeout:
+            return "total_timeout";
+        case StreamAbortReason::None:
+        default:
+            return "none";
+    }
+}
+
+bool stream_client_bytes(NetworkClient &client,
+                         const uint8_t *data,
+                         size_t size,
+                         size_t &sent,
+                         StreamAbortReason &abort_reason,
+                         uint32_t &max_write_ms) {
     sent = 0;
+    abort_reason = StreamAbortReason::None;
+    max_write_ms = 0;
     if (!data || size == 0) {
         return true;
     }
 
     uint16_t zero_writes = 0;
+    const uint32_t start_ms = millis();
+    uint32_t last_progress_ms = start_ms;
     while (sent < size) {
+        Watchdog::kick();
+
         size_t to_send = size - sent;
         if (to_send > kHttpStreamChunkSize) {
             to_send = kHttpStreamChunkSize;
         }
 
+        const uint32_t write_start_ms = millis();
         const size_t written = client.write(data + sent, to_send);
+        const uint32_t write_elapsed_ms = millis() - write_start_ms;
+        if (write_elapsed_ms > max_write_ms) {
+            max_write_ms = write_elapsed_ms;
+        }
+
+        const uint32_t now_ms = millis();
         if (written == 0) {
             if (!client.connected()) {
+                abort_reason = StreamAbortReason::Disconnected;
+                client.stop();
                 return false;
             }
             if (++zero_writes > kHttpStreamMaxZeroWrites) {
+                abort_reason = StreamAbortReason::ZeroWriteLimit;
+                client.stop();
+                return false;
+            }
+            if (deadline_reached(now_ms, start_ms + kHttpStreamMaxDurationMs)) {
+                abort_reason = StreamAbortReason::TotalTimeout;
+                client.stop();
+                return false;
+            }
+            if (deadline_reached(now_ms, last_progress_ms + kHttpStreamNoProgressTimeoutMs)) {
+                abort_reason = StreamAbortReason::NoProgressTimeout;
+                client.stop();
                 return false;
             }
             delay(kHttpStreamYieldMs);
+            Watchdog::kick();
             continue;
         }
 
         sent += written;
         zero_writes = 0;
+        last_progress_ms = now_ms;
+        if (deadline_reached(now_ms, start_ms + kHttpStreamMaxDurationMs)) {
+            abort_reason = StreamAbortReason::TotalTimeout;
+            client.stop();
+            return false;
+        }
         if (sent < size) {
             delay(kHttpStreamYieldMs);
+            Watchdog::kick();
         }
     }
     return true;
@@ -447,18 +514,30 @@ bool send_html_stream(WebServer &server, const String &html) {
     }
 
     size_t sent = 0;
+    StreamAbortReason abort_reason = StreamAbortReason::None;
+    uint32_t max_write_ms = 0;
     const bool ok = stream_client_bytes(
         server.client(),
         reinterpret_cast<const uint8_t *>(html.c_str()),
         body_size,
-        sent
+        sent,
+        abort_reason,
+        max_write_ms
     );
     if (!ok) {
         Logger::log(Logger::Warn, "Web",
-                    "HTML stream interrupted: uri=%s sent=%u/%u",
+                    "HTML stream interrupted: uri=%s sent=%u/%u reason=%s max_write_ms=%u",
                     server.uri().c_str(),
                     static_cast<unsigned>(sent),
-                    static_cast<unsigned>(body_size));
+                    static_cast<unsigned>(body_size),
+                    stream_abort_reason_text(abort_reason),
+                    static_cast<unsigned>(max_write_ms));
+    } else if (max_write_ms >= kHttpStreamSlowWriteWarnMs) {
+        Logger::log(Logger::Warn, "Web",
+                    "HTML stream slow write: uri=%s size=%u max_write_ms=%u",
+                    server.uri().c_str(),
+                    static_cast<unsigned>(body_size),
+                    static_cast<unsigned>(max_write_ms));
     }
     return ok;
 }
@@ -475,13 +554,23 @@ bool send_html_stream_progmem(WebServer &server, const uint8_t *content, size_t 
 
     // ESP32 NetworkClient::write_P forwards to write(), so one streaming path is enough.
     size_t sent = 0;
-    const bool ok = stream_client_bytes(server.client(), content, content_size, sent);
+    StreamAbortReason abort_reason = StreamAbortReason::None;
+    uint32_t max_write_ms = 0;
+    const bool ok = stream_client_bytes(server.client(), content, content_size, sent, abort_reason, max_write_ms);
     if (!ok) {
         Logger::log(Logger::Warn, "Web",
-                    "PROGMEM HTML stream interrupted: uri=%s sent=%u/%u",
+                    "PROGMEM HTML stream interrupted: uri=%s sent=%u/%u reason=%s max_write_ms=%u",
                     server.uri().c_str(),
                     static_cast<unsigned>(sent),
-                    static_cast<unsigned>(content_size));
+                    static_cast<unsigned>(content_size),
+                    stream_abort_reason_text(abort_reason),
+                    static_cast<unsigned>(max_write_ms));
+    } else if (max_write_ms >= kHttpStreamSlowWriteWarnMs) {
+        Logger::log(Logger::Warn, "Web",
+                    "PROGMEM HTML stream slow write: uri=%s size=%u max_write_ms=%u",
+                    server.uri().c_str(),
+                    static_cast<unsigned>(content_size),
+                    static_cast<unsigned>(max_write_ms));
     }
     return ok;
 }
