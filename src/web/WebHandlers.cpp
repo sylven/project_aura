@@ -15,6 +15,7 @@
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include <esp_ota_ops.h>
+#include <esp_wifi.h>
 #include <lwip/sockets.h>
 #include <lvgl.h>
 #include "lvgl_v8_port.h"
@@ -87,6 +88,11 @@ size_t g_ota_chunk_sum_size = 0;
 bool g_ota_first_chunk_seen = false;
 bool g_ota_start_rssi_valid = false;
 int g_ota_start_rssi = 0;
+bool g_ota_wifi_ps_saved = false;
+wifi_ps_type_t g_ota_wifi_ps_prev = WIFI_PS_NONE;
+
+void ota_disable_wifi_power_save_for_upload();
+void ota_restore_wifi_power_save();
 
 struct ChartMetricSpec {
     const char *key;
@@ -332,6 +338,7 @@ void ota_set_error(const String &error) {
     }
     g_ota_upload_success = false;
     g_ota_upload_active = false;
+    ota_restore_wifi_power_save();
     ota_restore_task_wdt();
     ota_set_ui_screen(false);
 }
@@ -440,6 +447,58 @@ const char *stream_abort_reason_text(StreamAbortReason reason) {
         default:
             return "none";
     }
+}
+
+void ota_disable_wifi_power_save_for_upload() {
+    const wifi_mode_t mode = WiFi.getMode();
+    if ((mode & WIFI_MODE_STA) == 0) {
+        g_ota_wifi_ps_saved = false;
+        g_ota_wifi_ps_prev = WIFI_PS_NONE;
+        return;
+    }
+
+    wifi_ps_type_t current_ps = WIFI_PS_NONE;
+    const esp_err_t get_err = esp_wifi_get_ps(&current_ps);
+    if (get_err != ESP_OK) {
+        LOGW("OTA", "failed to read WiFi power-save mode: %s", esp_err_to_name(get_err));
+        g_ota_wifi_ps_saved = false;
+        g_ota_wifi_ps_prev = WIFI_PS_NONE;
+        return;
+    }
+
+    g_ota_wifi_ps_prev = current_ps;
+    g_ota_wifi_ps_saved = true;
+    if (current_ps == WIFI_PS_NONE) {
+        return;
+    }
+
+    const esp_err_t set_err = esp_wifi_set_ps(WIFI_PS_NONE);
+    if (set_err == ESP_OK) {
+        LOGI("OTA", "WiFi power-save disabled for OTA (prev=%d)", static_cast<int>(current_ps));
+        return;
+    }
+
+    LOGW("OTA", "failed to disable WiFi power-save for OTA: %s", esp_err_to_name(set_err));
+    g_ota_wifi_ps_saved = false;
+    g_ota_wifi_ps_prev = WIFI_PS_NONE;
+}
+
+void ota_restore_wifi_power_save() {
+    if (!g_ota_wifi_ps_saved) {
+        return;
+    }
+
+    const wifi_ps_type_t restore_mode = g_ota_wifi_ps_prev;
+    const esp_err_t set_err = esp_wifi_set_ps(restore_mode);
+    if (set_err == ESP_OK) {
+        LOGI("OTA", "WiFi power-save restored after OTA (mode=%d)", static_cast<int>(restore_mode));
+    } else {
+        LOGW("OTA", "failed to restore WiFi power-save mode=%d: %s",
+             static_cast<int>(restore_mode),
+             esp_err_to_name(set_err));
+    }
+    g_ota_wifi_ps_saved = false;
+    g_ota_wifi_ps_prev = WIFI_PS_NONE;
 }
 
 uint8_t stream_retry_delay_ms(uint16_t zero_writes) {
@@ -2172,6 +2231,7 @@ void ota_handle_upload() {
         g_ota_upload_seen = true;
         g_ota_upload_active = true;
         g_ota_upload_start_ms = millis();
+        ota_disable_wifi_power_save_for_upload();
         if (WiFi.status() == WL_CONNECTED) {
             g_ota_start_rssi_valid = true;
             g_ota_start_rssi = WiFi.RSSI();
@@ -2435,6 +2495,7 @@ void ota_handle_update() {
     } else {
         ota_set_ui_screen(false);
     }
+    ota_restore_wifi_power_save();
     ota_restore_task_wdt();
     ota_reset_state();
 }

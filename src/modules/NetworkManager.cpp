@@ -473,6 +473,7 @@ void AuraNetworkManager::poll() {
     } else if (wifi_state_ == WIFI_STATE_STA_CONNECTED) {
         // Periodic check of actual WiFi link while connected.
         static uint32_t last_check_ms = 0;
+        static uint32_t last_ota_defer_log_ms = 0;
         uint32_t now = millis();
         if (now - last_check_ms >= 5000) {
             last_check_ms = now;
@@ -480,31 +481,41 @@ void AuraNetworkManager::poll() {
             if (st == WL_CONNECTED) {
                 sta_link_fail_streak_ = 0;
             } else {
-                if (sta_link_fail_streak_ < UINT8_MAX) {
-                    sta_link_fail_streak_++;
-                }
-                if (sta_link_fail_streak_ < kStaLinkFailThreshold) {
-                    Logger::log(Logger::Warn, "WiFi",
-                                "transient link status=%d (%u/%u), keep server alive",
-                                static_cast<int>(st),
-                                static_cast<unsigned>(sta_link_fail_streak_),
-                                static_cast<unsigned>(kStaLinkFailThreshold));
-                }
-                if (sta_link_fail_streak_ >= kStaLinkFailThreshold) {
-                    const char *rssi_text = "n/a";
-                    Logger::log(Logger::Warn, "WiFi",
-                                "connection lost detected (status=%d after %u checks, was connected for %u seconds, RSSI was %s)",
-                                static_cast<int>(st),
-                                static_cast<unsigned>(sta_link_fail_streak_),
-                                static_cast<unsigned>((now - wifi_connect_start_ms_) / 1000),
-                                rssi_text);
-                    stopMdns();
-                    server_.stop();
-                    wifi_state_ = WIFI_STATE_OFF;
+                if (ota_busy) {
                     sta_link_fail_streak_ = 0;
-                    wifi_retry_at_ms_ = now + Config::WIFI_CONNECT_RETRY_DELAY_MS;
-                    wifi_retry_count_ = 0;
-                    wifi_ui_dirty_ = true;
+                    if (now - last_ota_defer_log_ms >= 5000) {
+                        last_ota_defer_log_ms = now;
+                        Logger::log(Logger::Warn, "WiFi",
+                                    "link status=%d while OTA is busy, defer STA server stop",
+                                    static_cast<int>(st));
+                    }
+                } else {
+                    if (sta_link_fail_streak_ < UINT8_MAX) {
+                        sta_link_fail_streak_++;
+                    }
+                    if (sta_link_fail_streak_ < kStaLinkFailThreshold) {
+                        Logger::log(Logger::Warn, "WiFi",
+                                    "transient link status=%d (%u/%u), keep server alive",
+                                    static_cast<int>(st),
+                                    static_cast<unsigned>(sta_link_fail_streak_),
+                                    static_cast<unsigned>(kStaLinkFailThreshold));
+                    }
+                    if (sta_link_fail_streak_ >= kStaLinkFailThreshold) {
+                        const char *rssi_text = "n/a";
+                        Logger::log(Logger::Warn, "WiFi",
+                                    "connection lost detected (status=%d after %u checks, was connected for %u seconds, RSSI was %s)",
+                                    static_cast<int>(st),
+                                    static_cast<unsigned>(sta_link_fail_streak_),
+                                    static_cast<unsigned>((now - wifi_connect_start_ms_) / 1000),
+                                    rssi_text);
+                        stopMdns();
+                        server_.stop();
+                        wifi_state_ = WIFI_STATE_OFF;
+                        sta_link_fail_streak_ = 0;
+                        wifi_retry_at_ms_ = now + Config::WIFI_CONNECT_RETRY_DELAY_MS;
+                        wifi_retry_count_ = 0;
+                        wifi_ui_dirty_ = true;
+                    }
                 }
             }
         }
