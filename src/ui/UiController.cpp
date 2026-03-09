@@ -60,6 +60,8 @@ constexpr uint32_t UI_LVGL_DIAG_REBOOT_STALL_MS = 45000;
 constexpr uint32_t UI_LVGL_DIAG_REBOOT_FLUSH_LOG_MS = 80;
 constexpr uint32_t UI_LVGL_DIAG_AGE_UNKNOWN_MS = 0xFFFFFFFFu;
 constexpr uint32_t UI_LVGL_DIAG_TOUCH_WARN_DELTA = 3;
+constexpr uint32_t UI_POOR_GAS_BG_HEX = 0xEB0000;
+constexpr float UI_POOR_GAS_BG_HYSTERESIS_RATIO = 0.05f;
 
 float map_float_clamped(float value, float in_min, float in_max, float out_min, float out_max) {
     if (in_max <= in_min) return out_min;
@@ -131,6 +133,26 @@ bool should_wake_backlight_on_alert(const SensorData &data, bool gas_warmup) {
         }
     }
     return false;
+}
+
+float poor_gas_background_exit_threshold(float threshold) {
+    const float hysteresis = max(1.0f, threshold * UI_POOR_GAS_BG_HYSTERESIS_RATIO);
+    return threshold - hysteresis;
+}
+
+lv_style_t *get_poor_gas_background_style() {
+    static lv_style_t style;
+    static bool initialized = false;
+    if (!initialized) {
+        const lv_color_t alert_color = lv_color_hex(UI_POOR_GAS_BG_HEX);
+        lv_style_init(&style);
+        lv_style_set_bg_opa(&style, LV_OPA_COVER);
+        lv_style_set_bg_color(&style, alert_color);
+        lv_style_set_bg_grad_color(&style, alert_color);
+        lv_style_set_bg_grad_dir(&style, LV_GRAD_DIR_NONE);
+        initialized = true;
+    }
+    return &style;
 }
 
 } // namespace
@@ -912,6 +934,42 @@ AirQuality UiController::getAirQuality(const SensorData &data) {
     return aq;
 }
 
+bool UiController::has_poor_gas_background_alert() {
+    const bool hcho_valid = currentData.hcho_valid &&
+                            isfinite(currentData.hcho) &&
+                            currentData.hcho >= 0.0f;
+    const bool co_valid = currentData.co_sensor_present &&
+                          currentData.co_valid &&
+                          isfinite(currentData.co_ppm) &&
+                          currentData.co_ppm >= 0.0f;
+
+    if (!poor_gas_background_alert_active_) {
+        poor_gas_background_alert_active_ =
+            (hcho_valid && currentData.hcho > AQ_HCHO_ORANGE_MAX_PPB) ||
+            (co_valid && currentData.co_ppm > AQ_CO_ORANGE_MAX_PPM);
+        return poor_gas_background_alert_active_;
+    }
+
+    const float hcho_exit_threshold = poor_gas_background_exit_threshold(AQ_HCHO_ORANGE_MAX_PPB);
+    const float co_exit_threshold = poor_gas_background_exit_threshold(AQ_CO_ORANGE_MAX_PPM);
+    const bool hcho_still_alert = hcho_valid && currentData.hcho >= hcho_exit_threshold;
+    const bool co_still_alert = co_valid && currentData.co_ppm >= co_exit_threshold;
+    poor_gas_background_alert_active_ = hcho_still_alert || co_still_alert;
+    return poor_gas_background_alert_active_;
+}
+
+void UiController::update_main_screen_background_alert() {
+    if (!objects.background_pro || !lv_obj_is_valid(objects.background_pro)) {
+        return;
+    }
+
+    lv_style_t *alert_style = get_poor_gas_background_style();
+    lv_obj_remove_style(objects.background_pro, alert_style, LV_PART_MAIN | LV_STATE_DEFAULT);
+    if (has_poor_gas_background_alert()) {
+        lv_obj_add_style(objects.background_pro, alert_style, LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+}
+
 void UiController::set_dot_color(lv_obj_t *obj, lv_color_t color) {
     if (!obj) return;
     lv_obj_set_style_bg_color(obj, color, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -1422,6 +1480,7 @@ void UiController::update_ui() {
         lv_obj_set_style_shadow_opa(objects.container_settings_header, header_shadow, LV_PART_MAIN | LV_STATE_DEFAULT);
     }
 
+    update_main_screen_background_alert();
     update_sensor_cards(aq, gas_warmup, show_co2_bar);
 }
 
