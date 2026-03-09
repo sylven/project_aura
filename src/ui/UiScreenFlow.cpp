@@ -48,7 +48,7 @@ void UiScreenFlow::processPendingScreen(UiController &owner, uint32_t now_ms) {
             owner.pending_screen_id = 0;
 
             // Lazily rebuilt screens can be released on exit.
-            // Delay unload slightly to avoid racing with screen transition animation.
+            // Delay unload slightly to avoid racing with screen activation.
             owner.deferred_unload_.scheduleOnSwitch(previous_screen, owner.current_screen_id, now_ms);
 
             if (previous_screen == SCREEN_ID_PAGE_SENSORS_INFO &&
@@ -120,7 +120,7 @@ void UiScreenFlow::processDeferredUnloads(UiController &owner, uint32_t now_ms) 
             }
             owner.deferred_unload_.clear(i);
         } else {
-            // Transition may still be in-flight; retry shortly.
+            // Screen switch may still be settling; retry shortly.
             owner.deferred_unload_.retry(i, now_ms);
         }
     }

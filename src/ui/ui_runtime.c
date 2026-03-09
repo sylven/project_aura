@@ -194,7 +194,7 @@ void loadScreen(enum ScreensEnum screenId) {
         return;
     }
     currentScreen = screenId - 1;
-    lv_scr_load_anim(screen, LV_SCR_LOAD_ANIM_FADE_IN, 200, 0, false);
+    lv_scr_load(screen);
 }
 
 void unloadScreen(enum ScreensEnum screenId) {
@@ -218,8 +218,7 @@ void unloadScreen(enum ScreensEnum screenId) {
         return;
     }
     if (screen == lv_scr_act()) {
-        // Screen transition animation may still keep this screen active.
-        // Retry unloading later from caller side.
+        // Active screen cannot be unloaded in-place; retry later from caller side.
         return;
     }
     clearObjectRefsForScreen(screen);
