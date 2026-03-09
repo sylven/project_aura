@@ -1294,6 +1294,10 @@ void wifi_handle_save() {
         send_no_store_text(server, 400, "SSID must be 1-32 bytes");
         return;
     }
+    if (WebInputValidation::hasControlChars(pass)) {
+        send_no_store_text(server, 400, "Password contains unsupported control characters");
+        return;
+    }
 
     if (!context->storage->saveWiFiSettings(ssid, pass, true)) {
         send_no_store_text(server, 500, "Failed to persist WiFi settings");

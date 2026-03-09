@@ -10,6 +10,21 @@ bool isWifiSsidValid(const String &value, size_t max_len) {
     return len > 0 && len <= max_len;
 }
 
+bool hasControlChars(const String &value) {
+    const char *raw = value.c_str();
+    if (!raw) {
+        return false;
+    }
+
+    for (; *raw != '\0'; ++raw) {
+        const unsigned char ch = static_cast<unsigned char>(*raw);
+        if (ch < 32 || ch == 127) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool parsePortOrDefault(const String &value, uint16_t default_port, uint16_t &out_port) {
     const char *raw = value.c_str();
     if (!raw) {

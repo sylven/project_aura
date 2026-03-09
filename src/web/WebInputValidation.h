@@ -7,6 +7,7 @@ namespace WebInputValidation {
 constexpr size_t kWifiSsidMaxBytes = 32;
 
 bool isWifiSsidValid(const String &value, size_t max_len = kWifiSsidMaxBytes);
+bool hasControlChars(const String &value);
 bool parsePortOrDefault(const String &value, uint16_t default_port, uint16_t &out_port);
 
 } // namespace WebInputValidation

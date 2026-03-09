@@ -20,6 +20,12 @@ void test_wifi_ssid_validation_rejects_empty_and_too_long() {
     TEST_ASSERT_FALSE(WebInputValidation::isWifiSsidValid(long_ssid));
 }
 
+void test_control_char_detection_matches_password_policy() {
+    TEST_ASSERT_FALSE(WebInputValidation::hasControlChars(String(" normal pass ")));
+    TEST_ASSERT_TRUE(WebInputValidation::hasControlChars(String("bad\npass")));
+    TEST_ASSERT_TRUE(WebInputValidation::hasControlChars(String("bad\tpass")));
+}
+
 void test_port_parse_uses_default_for_empty_input() {
     uint16_t port = 0;
     TEST_ASSERT_TRUE(WebInputValidation::parsePortOrDefault(String("   "), 1883, port));
@@ -43,6 +49,7 @@ int main(int, char **) {
     UNITY_BEGIN();
     RUN_TEST(test_wifi_ssid_validation_accepts_spaces_and_utf8);
     RUN_TEST(test_wifi_ssid_validation_rejects_empty_and_too_long);
+    RUN_TEST(test_control_char_detection_matches_password_policy);
     RUN_TEST(test_port_parse_uses_default_for_empty_input);
     RUN_TEST(test_port_parse_accepts_valid_numeric_value);
     RUN_TEST(test_port_parse_rejects_invalid_values);
