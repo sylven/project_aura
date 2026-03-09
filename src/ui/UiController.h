@@ -379,6 +379,7 @@ private:
     lv_color_t getHCHOColor(float hcho_ppb, bool valid);
     AirQuality getAirQuality(const SensorData &data);
     bool has_poor_gas_background_alert();
+    bool has_high_co2_background_alert();
     void update_main_screen_background_alert();
     lv_color_t blink_red(lv_color_t color);
     lv_color_t night_alert_color(lv_color_t color);
@@ -795,6 +796,7 @@ private:
     uint8_t status_max_severity = 0;
     bool co_status_alert_active = false;
     bool poor_gas_background_alert_active_ = false;
+    bool high_co2_background_alert_active_ = false;
     uint32_t last_lvgl_lock_warn_ms = 0;
     uint16_t lvgl_lock_fail_streak = 0;
     uint32_t lvgl_diag_last_heartbeat_ms = 0;

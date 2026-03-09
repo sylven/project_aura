@@ -61,7 +61,9 @@ constexpr uint32_t UI_LVGL_DIAG_REBOOT_FLUSH_LOG_MS = 80;
 constexpr uint32_t UI_LVGL_DIAG_AGE_UNKNOWN_MS = 0xFFFFFFFFu;
 constexpr uint32_t UI_LVGL_DIAG_TOUCH_WARN_DELTA = 3;
 constexpr uint32_t UI_POOR_GAS_BG_HEX = 0xEB0000;
+constexpr uint32_t UI_HIGH_CO2_BG_HEX = 0xB36B00;
 constexpr float UI_POOR_GAS_BG_HYSTERESIS_RATIO = 0.05f;
+constexpr int UI_HIGH_CO2_BG_ON_PPM = 3000;
 
 float map_float_clamped(float value, float in_min, float in_max, float out_min, float out_max) {
     if (in_max <= in_min) return out_min;
@@ -145,6 +147,21 @@ lv_style_t *get_poor_gas_background_style() {
     static bool initialized = false;
     if (!initialized) {
         const lv_color_t alert_color = lv_color_hex(UI_POOR_GAS_BG_HEX);
+        lv_style_init(&style);
+        lv_style_set_bg_opa(&style, LV_OPA_COVER);
+        lv_style_set_bg_color(&style, alert_color);
+        lv_style_set_bg_grad_color(&style, alert_color);
+        lv_style_set_bg_grad_dir(&style, LV_GRAD_DIR_NONE);
+        initialized = true;
+    }
+    return &style;
+}
+
+lv_style_t *get_high_co2_background_style() {
+    static lv_style_t style;
+    static bool initialized = false;
+    if (!initialized) {
+        const lv_color_t alert_color = lv_color_hex(UI_HIGH_CO2_BG_HEX);
         lv_style_init(&style);
         lv_style_set_bg_opa(&style, LV_OPA_COVER);
         lv_style_set_bg_color(&style, alert_color);
@@ -958,15 +975,33 @@ bool UiController::has_poor_gas_background_alert() {
     return poor_gas_background_alert_active_;
 }
 
+bool UiController::has_high_co2_background_alert() {
+    const bool co2_valid = currentData.co2_valid && currentData.co2 > 0;
+
+    if (!high_co2_background_alert_active_) {
+        high_co2_background_alert_active_ = co2_valid && currentData.co2 >= UI_HIGH_CO2_BG_ON_PPM;
+        return high_co2_background_alert_active_;
+    }
+
+    const int co2_exit_threshold =
+        max(1, static_cast<int>(lroundf(poor_gas_background_exit_threshold(static_cast<float>(UI_HIGH_CO2_BG_ON_PPM)))));
+    high_co2_background_alert_active_ = co2_valid && currentData.co2 >= co2_exit_threshold;
+    return high_co2_background_alert_active_;
+}
+
 void UiController::update_main_screen_background_alert() {
     if (!objects.background_pro || !lv_obj_is_valid(objects.background_pro)) {
         return;
     }
 
-    lv_style_t *alert_style = get_poor_gas_background_style();
-    lv_obj_remove_style(objects.background_pro, alert_style, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_style_t *poor_gas_style = get_poor_gas_background_style();
+    lv_style_t *high_co2_style = get_high_co2_background_style();
+    lv_obj_remove_style(objects.background_pro, poor_gas_style, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_remove_style(objects.background_pro, high_co2_style, LV_PART_MAIN | LV_STATE_DEFAULT);
     if (has_poor_gas_background_alert()) {
-        lv_obj_add_style(objects.background_pro, alert_style, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_add_style(objects.background_pro, poor_gas_style, LV_PART_MAIN | LV_STATE_DEFAULT);
+    } else if (has_high_co2_background_alert()) {
+        lv_obj_add_style(objects.background_pro, high_co2_style, LV_PART_MAIN | LV_STATE_DEFAULT);
     }
 }
 
