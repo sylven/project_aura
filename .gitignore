@@ -25,3 +25,4 @@ release-assets/
 
 # Generated web assets
 src/web/generated/*.inc
+scripts/__pycache__/

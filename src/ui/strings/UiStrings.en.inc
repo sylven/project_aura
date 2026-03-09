@@ -149,7 +149,7 @@
     "CUSTOM",
     "PRESETS",
     "EXAMPLE:",
-    "To configure custom theme:\n- Connect Project Aura to WI-FI first\n- Open {{IP_URL}} in browser or \nscan QR code.\n- Alternative hostname:\n{{LOCAL_URL}}\n- Save by pressing Back",
+    "To configure custom theme:\n- Connect Project Aura to WI-FI first\n- Open {{IP_URL}} in browser \nor scan QR code.\n- Alternative hostname:\n{{LOCAL_URL}}\n- Save by pressing Back",
     "Alternative: use the .local link above.\n{{LOCAL_URL}}",
     "FAN\nCONTROL",
     "Fan Control",

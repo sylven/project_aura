@@ -18,10 +18,24 @@ extern const uint8_t kDashboardStylesCssGzip[] PROGMEM;
 extern const size_t kDashboardStylesCssGzipSize;
 extern const uint8_t kDashboardAppJsGzip[] PROGMEM;
 extern const size_t kDashboardAppJsGzipSize;
-extern const uint8_t kDacPageTemplateGzip[] PROGMEM;
-extern const size_t kDacPageTemplateGzipSize;
-extern const uint8_t kThemePageTemplateGzip[] PROGMEM;
-extern const size_t kThemePageTemplateGzipSize;
+extern const char kThemeAssetVersion[];
+extern const char kThemeStylesCssPath[];
+extern const char kThemeAppJsPath[];
+extern const uint8_t kThemeShellHtmlGzip[] PROGMEM;
+extern const size_t kThemeShellHtmlGzipSize;
+extern const uint8_t kThemeStylesCssGzip[] PROGMEM;
+extern const size_t kThemeStylesCssGzipSize;
+extern const uint8_t kThemeAppJsGzip[] PROGMEM;
+extern const size_t kThemeAppJsGzipSize;
+extern const char kDacAssetVersion[];
+extern const char kDacStylesCssPath[];
+extern const char kDacAppJsPath[];
+extern const uint8_t kDacShellHtmlGzip[] PROGMEM;
+extern const size_t kDacShellHtmlGzipSize;
+extern const uint8_t kDacStylesCssGzip[] PROGMEM;
+extern const size_t kDacStylesCssGzipSize;
+extern const uint8_t kDacAppJsGzip[] PROGMEM;
+extern const size_t kDacAppJsGzipSize;
 
 static const char kWifiListScanning[] PROGMEM = R"HTML(
 <div class="network-item disabled">
@@ -2189,6 +2203,10 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
     let updatingFromState = false;
     let autoSaveFeedbackTimer = null;
     let otaBusy = false;
+    let stateRefreshTimer = null;
+    let stateFetchInFlight = false;
+    const DAC_STATE_REFRESH_VISIBLE_MS = 1000;
+    const DAC_STATE_REFRESH_HIDDEN_MS = 5000;
 
     function fmtTimer(sec) {
       if (!sec || sec <= 0) return "--:--";
@@ -2246,6 +2264,16 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
         clearTimeout(autoSaveFeedbackTimer);
         autoSaveFeedbackTimer = null;
       }
+    }
+
+    function scheduleStateRefresh(delayMs) {
+      if (stateRefreshTimer) {
+        clearTimeout(stateRefreshTimer);
+      }
+      stateRefreshTimer = setTimeout(() => {
+        stateRefreshTimer = null;
+        fetchState().catch(() => {});
+      }, delayMs);
     }
 
     function setSaveButtonState(state) {
@@ -2457,21 +2485,30 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
     }
 
     async function fetchState() {
+      if (stateFetchInFlight) {
+        return;
+      }
+      stateFetchInFlight = true;
       if (otaBusy) {
         // Keep polling to auto-recover when OTA completes.
       }
-      const r = await fetch("/dac/state", {cache:"no-store"});
-      if (r.status === 503) {
-        let payload = null;
-        try { payload = await r.json(); } catch (_) {}
-        applyOtaBusyState((payload && payload.error) || "OTA in progress");
-        return;
-      }
-      if (!r.ok) return;
-      const json = await r.json();
-      if (json && json.success) {
-        clearOtaBusyState();
-        render(json);
+      try {
+        const r = await fetch("/dac/state", {cache:"no-store"});
+        if (r.status === 503) {
+          let payload = null;
+          try { payload = await r.json(); } catch (_) {}
+          applyOtaBusyState((payload && payload.error) || "OTA in progress");
+          return;
+        }
+        if (!r.ok) return;
+        const json = await r.json();
+        if (json && json.success) {
+          clearOtaBusyState();
+          render(json);
+        }
+      } finally {
+        stateFetchInFlight = false;
+        scheduleStateRefresh(document.hidden ? DAC_STATE_REFRESH_HIDDEN_MS : DAC_STATE_REFRESH_VISIBLE_MS);
       }
     }
 
@@ -2489,7 +2526,7 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
         return;
       }
       if (r.ok) {
-        setTimeout(fetchState, 80);
+        scheduleStateRefresh(80);
       }
     }
 
@@ -2543,7 +2580,7 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
           if (autoDirty) setSaveButtonState("dirty");
           else setSaveButtonState("idle");
         }, 1600);
-        setTimeout(fetchState, 80);
+        scheduleStateRefresh(80);
       } else {
         setSaveButtonState("error");
         autoSaveFeedbackTimer = setTimeout(() => {
@@ -2580,11 +2617,18 @@ static const char kDacPageTemplate[] PROGMEM = R"HTML(
       markAutoDirty();
     });
 
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        scheduleStateRefresh(DAC_STATE_REFRESH_HIDDEN_MS);
+      } else {
+        scheduleStateRefresh(60);
+      }
+    });
+
     buildManualButtons();
     buildAutoCards();
     setSaveButtonState("idle");
-    fetchState();
-    setInterval(fetchState, 1000);
+    fetchState().catch(() => {});
   </script>
 </body>
 </html>

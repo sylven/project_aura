@@ -591,6 +591,13 @@ bool FanControl::tryInitialize(uint32_t now_ms) {
 }
 
 bool FanControl::applyOutputMillivolts(uint16_t millivolts) {
+    if (dac_.writeChannelMillivolts(Config::DAC_CHANNEL_VOUT0, millivolts)) {
+        return true;
+    }
+
+    LOGW("FanControl",
+         "DAC write failed at %u mV, retrying once",
+         static_cast<unsigned>(millivolts));
     return dac_.writeChannelMillivolts(Config::DAC_CHANNEL_VOUT0, millivolts);
 }
 

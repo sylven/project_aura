@@ -1656,10 +1656,36 @@ void theme_handle_root() {
     }
     send_html_stream_progmem(
         *context->server,
-        WebTemplates::kThemePageTemplateGzip,
-        WebTemplates::kThemePageTemplateGzipSize,
+        WebTemplates::kThemeShellHtmlGzip,
+        WebTemplates::kThemeShellHtmlGzipSize,
         true
     );
+}
+
+void theme_handle_styles() {
+    WebHandlerContext *context = ctx();
+    if (!context || !context->server) {
+        return;
+    }
+    send_progmem_asset(*context->server,
+                       "text/css; charset=utf-8",
+                       WebTemplates::kThemeStylesCssGzip,
+                       WebTemplates::kThemeStylesCssGzipSize,
+                       true,
+                       AssetCacheMode::Immutable);
+}
+
+void theme_handle_app() {
+    WebHandlerContext *context = ctx();
+    if (!context || !context->server) {
+        return;
+    }
+    send_progmem_asset(*context->server,
+                       "application/javascript; charset=utf-8",
+                       WebTemplates::kThemeAppJsGzip,
+                       WebTemplates::kThemeAppJsGzipSize,
+                       true,
+                       AssetCacheMode::Immutable);
 }
 
 void theme_handle_state() {
@@ -1802,10 +1828,36 @@ void dac_handle_root() {
     }
     send_html_stream_progmem(
         *context->server,
-        WebTemplates::kDacPageTemplateGzip,
-        WebTemplates::kDacPageTemplateGzipSize,
+        WebTemplates::kDacShellHtmlGzip,
+        WebTemplates::kDacShellHtmlGzipSize,
         true
     );
+}
+
+void dac_handle_styles() {
+    WebHandlerContext *context = ctx();
+    if (!context || !context->server) {
+        return;
+    }
+    send_progmem_asset(*context->server,
+                       "text/css; charset=utf-8",
+                       WebTemplates::kDacStylesCssGzip,
+                       WebTemplates::kDacStylesCssGzipSize,
+                       true,
+                       AssetCacheMode::Immutable);
+}
+
+void dac_handle_app() {
+    WebHandlerContext *context = ctx();
+    if (!context || !context->server) {
+        return;
+    }
+    send_progmem_asset(*context->server,
+                       "application/javascript; charset=utf-8",
+                       WebTemplates::kDacAppJsGzip,
+                       WebTemplates::kDacAppJsGzipSize,
+                       true,
+                       AssetCacheMode::Immutable);
 }
 
 void dac_handle_state() {
