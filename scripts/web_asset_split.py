@@ -20,6 +20,7 @@ class ShellConfig:
     body_replacement: str = '<body class="shell-loading">'
     load_script_timeout_ms: int = 1500
     asset_retry_delay_ms: int = 800
+    asset_second_retry_delay_ms: int = 2000
 
 
 @dataclass(frozen=True)
@@ -100,6 +101,7 @@ def split_assets(html: str, css_path: str, js_path: str, shell: ShellConfig, lab
   var jsHref = "{js_path}";
   var scriptRequested = false;
   var shellBootSub = document.querySelector('.shell-boot-sub');
+  var retryDelays = [{shell.asset_retry_delay_ms}, {shell.asset_second_retry_delay_ms}];
   function withRetryToken(url, attempt) {{
     if (!attempt) return url;
     return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'retry=' + attempt;
@@ -119,9 +121,10 @@ def split_assets(html: str, css_path: str, js_path: str, shell: ShellConfig, lab
         if (el.parentNode) {{
           el.parentNode.removeChild(el);
         }}
-        if (attempt < 1) {{
+        if (attempt < retryDelays.length) {{
+          var retryDelay = retryDelays[attempt];
           attempt++;
-          window.setTimeout(start, {shell.asset_retry_delay_ms});
+          window.setTimeout(start, retryDelay);
           return;
         }}
         if (onFinalError) onFinalError();

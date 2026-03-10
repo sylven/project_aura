@@ -16,6 +16,7 @@
 #include "modules/MqttPayloadBuilder.h"
 #include "modules/StorageManager.h"
 #include "modules/NetworkManager.h"
+#include "web/WebHandlers.h"
 
 namespace {
 
@@ -735,6 +736,9 @@ void MqttManager::poll(const SensorData &data, bool night_mode, bool alert_blink
         uint8_t stage = retry_stage_for_attempts(mqtt_connect_attempts_);
         uint32_t retry_delay = retry_delay_for_stage(stage);
         if (now - mqtt_last_attempt_ms_ >= retry_delay) {
+            if (WebHandlersShouldPauseMqttConnect()) {
+                return;
+            }
             mqtt_last_attempt_ms_ = now;
             connectClient(data, night_mode, alert_blink, backlight_on);
         }

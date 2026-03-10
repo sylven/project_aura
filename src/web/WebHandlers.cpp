@@ -62,6 +62,7 @@ constexpr uint32_t kHttpStreamSlowWriteWarnMs = 200;
 
 struct StreamProfile {
     size_t chunk_size;
+    size_t min_chunk_size;
     uint16_t max_zero_writes;
     uint8_t yield_ms;
     uint16_t retry_delay_fast_ms;
@@ -71,10 +72,12 @@ struct StreamProfile {
     uint16_t retry_delay_max_ms;
     uint32_t max_duration_ms;
     uint32_t no_progress_timeout_ms;
+    bool adaptive_chunking;
     bool disable_wifi_power_save;
 };
 
 constexpr StreamProfile kHtmlStreamProfile = {
+    1460,
     1460,
     2048,
     1,
@@ -85,11 +88,13 @@ constexpr StreamProfile kHtmlStreamProfile = {
     150,
     45000,
     10000,
+    false,
     false
 };
 
-constexpr StreamProfile kImmutableAssetStreamProfile = {
-    1024,
+constexpr StreamProfile kShellPageStreamProfile = {
+    768,
+    256,
     2048,
     1,
     2,
@@ -97,8 +102,25 @@ constexpr StreamProfile kImmutableAssetStreamProfile = {
     50,
     100,
     150,
-    60000,
-    15000,
+    45000,
+    20000,
+    true,
+    true
+};
+
+constexpr StreamProfile kImmutableAssetStreamProfile = {
+    1024,
+    256,
+    2048,
+    1,
+    2,
+    12,
+    50,
+    100,
+    150,
+    65000,
+    20000,
+    true,
     true
 };
 constexpr const char kApiErrorOtaBusyJson[] =
@@ -521,6 +543,36 @@ struct WebStreamStats {
 };
 
 WebStreamStats g_web_stream_stats;
+constexpr uint32_t kWebTransferMqttPauseMs = 2000;
+uint16_t g_web_transfer_active_count = 0;
+uint32_t g_web_transfer_pause_until_ms = 0;
+
+void note_web_transfer_activity() {
+    g_web_transfer_pause_until_ms = millis() + kWebTransferMqttPauseMs;
+}
+
+struct WebTransferGuard {
+    explicit WebTransferGuard(bool enabled) : enabled_(enabled) {
+        if (!enabled_) {
+            return;
+        }
+        g_web_transfer_active_count++;
+        note_web_transfer_activity();
+    }
+
+    ~WebTransferGuard() {
+        if (!enabled_) {
+            return;
+        }
+        if (g_web_transfer_active_count > 0) {
+            g_web_transfer_active_count--;
+        }
+        note_web_transfer_activity();
+    }
+
+private:
+    bool enabled_ = false;
+};
 
 void apply_asset_cache_headers(WebServer &server, AssetCacheMode cache_mode) {
     if (cache_mode == AssetCacheMode::Immutable) {
@@ -558,6 +610,26 @@ void record_web_stream_result(const String &uri,
         : (sizeof(stats.last_uri) - 1);
     memcpy(stats.last_uri, uri.c_str(), copy_len);
     stats.last_uri[copy_len] = '\0';
+}
+
+size_t effective_stream_chunk_size(const StreamProfile &profile, uint16_t zero_writes) {
+    size_t chunk = profile.chunk_size;
+    if (!profile.adaptive_chunking || profile.min_chunk_size == 0 || profile.min_chunk_size >= chunk) {
+        return chunk;
+    }
+
+    if (zero_writes >= 48) {
+        chunk = profile.min_chunk_size;
+    } else if (zero_writes >= 16) {
+        chunk /= 2;
+    } else if (zero_writes >= 4) {
+        chunk = (chunk * 3U) / 4U;
+    }
+
+    if (chunk < profile.min_chunk_size) {
+        chunk = profile.min_chunk_size;
+    }
+    return chunk;
 }
 
 void ota_disable_wifi_power_save_for_upload() {
@@ -690,8 +762,9 @@ bool stream_client_bytes(NetworkClient &client,
         Watchdog::kick();
 
         size_t to_send = size - sent;
-        if (to_send > profile.chunk_size) {
-            to_send = profile.chunk_size;
+        const size_t chunk_size = effective_stream_chunk_size(profile, zero_writes);
+        if (to_send > chunk_size) {
+            to_send = chunk_size;
         }
 
         const uint32_t write_start_ms = millis();
@@ -848,9 +921,12 @@ bool send_progmem_asset(WebServer &server,
                         const uint8_t *content,
                         size_t content_size,
                         bool gzip_encoded,
-                        AssetCacheMode cache_mode) {
+                        AssetCacheMode cache_mode,
+                        const StreamProfile *profile_override = nullptr) {
     const StreamProfile &profile =
-        (cache_mode == AssetCacheMode::Immutable) ? kImmutableAssetStreamProfile : kHtmlStreamProfile;
+        profile_override ? *profile_override :
+        ((cache_mode == AssetCacheMode::Immutable) ? kImmutableAssetStreamProfile : kHtmlStreamProfile);
+    WebTransferGuard transfer_guard(profile_override != nullptr || cache_mode == AssetCacheMode::Immutable);
     WifiPowerSaveGuard wifi_ps_guard;
     if (profile.disable_wifi_power_save) {
         wifi_ps_guard.suspend();
@@ -904,7 +980,8 @@ bool send_html_stream_progmem(WebServer &server, const uint8_t *content, size_t 
                               content,
                               content_size,
                               gzip_encoded,
-                              AssetCacheMode::NoStore);
+                              AssetCacheMode::NoStore,
+                              &kShellPageStreamProfile);
 }
 
 const char *dac_status_text(const FanControl &fan) {
@@ -1069,6 +1146,16 @@ bool WebHandlersIsOtaBusy() {
 
 bool WebHandlersConsumeRestartRequest() {
     return g_restart_controller.consume_request();
+}
+
+bool WebHandlersShouldPauseMqttConnect() {
+    if (g_web_transfer_active_count > 0) {
+        return true;
+    }
+    if (g_web_transfer_pause_until_ms == 0) {
+        return false;
+    }
+    return !deadline_reached(millis(), g_web_transfer_pause_until_ms);
 }
 
 void WebHandlersPollDeferred() {
