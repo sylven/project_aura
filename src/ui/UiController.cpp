@@ -25,6 +25,7 @@
 #include "web/WebHandlers.h"
 #include "config/AppConfig.h"
 #include "core/BootState.h"
+#include "core/AppVersion.h"
 #include "core/Logger.h"
 #include "core/SafeRestart.h"
 #include "core/SystemLogFilter.h"
@@ -38,10 +39,6 @@
 #include "ui/BacklightManager.h"
 #include "ui/NightModeManager.h"
 #include "ui/UiEventBinder.h"
-
-#ifndef APP_VERSION
-#define APP_VERSION "dev"
-#endif
 
 using namespace Config;
 
@@ -389,7 +386,7 @@ void UiController::begin() {
     init_ui_defaults();
     if (objects.label_boot_ver) {
         char version_text[24];
-        snprintf(version_text, sizeof(version_text), "v%s", APP_VERSION);
+        snprintf(version_text, sizeof(version_text), "v%s", AppVersion::fullVersion());
         safe_label_set_text(objects.label_boot_ver, version_text);
     }
     current_screen_id = SCREEN_ID_PAGE_MAIN_PRO;

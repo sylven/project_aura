@@ -1,6 +1,7 @@
 param(
   [string]$Env = "project_aura",
   [string]$Version,
+  [string]$BuildId,
   [string]$Repo = "21cncstudio/project_aura",
   [string]$Tag,
   [string]$OutputRoot = "release-assets",
@@ -42,6 +43,30 @@ function Invoke-Platformio {
   }
 }
 
+function Resolve-BuildId {
+  param([string]$Root)
+
+  if ($BuildId) {
+    return $BuildId
+  }
+
+  $git = Get-Command git -ErrorAction SilentlyContinue
+  if (-not $git) {
+    return $null
+  }
+
+  Push-Location $Root
+  try {
+    $sha = (& git rev-parse --short=7 HEAD 2>$null).Trim()
+    if ([string]::IsNullOrWhiteSpace($sha)) {
+      return $null
+    }
+    return $sha
+  } finally {
+    Pop-Location
+  }
+}
+
 function Get-PartitionOffset {
   param(
     [string]$CsvPath,
@@ -77,6 +102,12 @@ if (-not $Version -and (Test-Path $platformioIni)) {
 
 if (-not $Version) {
   throw "Version not found. Pass -Version 1.1.0 or set -DAPP_VERSION in platformio.ini."
+}
+
+$resolvedBuildId = Resolve-BuildId -Root $root
+$displayVersion = $Version
+if ($resolvedBuildId) {
+  $displayVersion = "{0}-{1}" -f $Version, $resolvedBuildId
 }
 
 if (-not $Tag) {
@@ -140,13 +171,13 @@ Copy-Item -Force (Join-Path $buildDir "firmware.bin") (Join-Path $outDir "firmwa
 Copy-Item -Force (Join-Path $buildDir "littlefs.bin") (Join-Path $outDir "littlefs.bin")
 Copy-Item -Force $bootApp0 (Join-Path $outDir "boot_app0.bin")
 
-$otaFileName = "project_aura_{0}_ota_firmware.bin" -f $Version
+$otaFileName = "project_aura_{0}_ota_firmware.bin" -f $displayVersion
 Copy-Item -Force (Join-Path $buildDir "firmware.bin") (Join-Path $outDir $otaFileName)
 
 $baseUrl = "https://github.com/$Repo/releases/download/$Tag"
 $manifestFull = [ordered]@{
   name = "Project Aura"
-  version = $Version
+  version = $displayVersion
   builds = @(
     [ordered]@{
       chipFamily = "ESP32-S3"
@@ -162,7 +193,7 @@ $manifestFull = [ordered]@{
 }
 $manifestUpdate = [ordered]@{
   name = "Project Aura"
-  version = $Version
+  version = $displayVersion
   new_install_prompt_erase = $true
   builds = @(
     [ordered]@{

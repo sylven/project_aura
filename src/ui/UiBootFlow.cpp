@@ -10,16 +10,13 @@
 #include <esp_heap_caps.h>
 
 #include "core/BootState.h"
+#include "core/AppVersion.h"
 #include "core/Logger.h"
 #include "modules/FanControl.h"
 #include "modules/StorageManager.h"
 #include "ui/UiController.h"
 #include "ui/UiText.h"
 #include "ui/ui.h"
-
-#ifndef APP_VERSION
-#define APP_VERSION "dev"
-#endif
 
 namespace {
 
@@ -193,7 +190,7 @@ void UiBootFlow::updateBootDiag(UiController &owner, uint32_t now_ms) {
     size_t error_len = 0;
 
     if (objects.lbl_diag_app_ver) {
-        snprintf(buf, sizeof(buf), "v%s", APP_VERSION);
+        snprintf(buf, sizeof(buf), "v%s", AppVersion::fullVersion());
         owner.safe_label_set_text(objects.lbl_diag_app_ver, buf);
     }
     if (objects.lbl_diag_mac) {

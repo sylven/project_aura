@@ -1,6 +1,7 @@
 param(
   [Parameter(Mandatory = $true)]
   [string]$Version,
+  [string]$BuildId,
   [string]$Repo = "21cncstudio/project_aura",
   [string]$Tag,
   [string]$Title,
@@ -25,6 +26,30 @@ function Write-Step {
   Write-Host ("[{0}] {1}" -f (Get-Date -Format "HH:mm:ss"), $Message)
 }
 
+function Resolve-BuildId {
+  param([string]$Root)
+
+  if ($BuildId) {
+    return $BuildId
+  }
+
+  $git = Get-Command git -ErrorAction SilentlyContinue
+  if (-not $git) {
+    return $null
+  }
+
+  Push-Location $Root
+  try {
+    $sha = (& git rev-parse --short=7 HEAD 2>$null).Trim()
+    if ([string]::IsNullOrWhiteSpace($sha)) {
+      return $null
+    }
+    return $sha
+  } finally {
+    Pop-Location
+  }
+}
+
 if (-not $Tag) {
   $Tag = "v$Version"
 }
@@ -33,6 +58,11 @@ if (-not $Title) {
 }
 
 $root = Resolve-Path (Join-Path $PSScriptRoot "..")
+$resolvedBuildId = Resolve-BuildId -Root $root
+$displayVersion = $Version
+if ($resolvedBuildId) {
+  $displayVersion = "{0}-{1}" -f $Version, $resolvedBuildId
+}
 if (-not $AssetsDir) {
   $AssetsDir = Join-Path $root ("release-assets\{0}" -f $Tag)
 }
@@ -46,7 +76,7 @@ if (-not (Test-Path $AssetsDir)) {
 
 if (-not $AssetNames -or $AssetNames.Count -eq 0) {
   $AssetNames = @(
-    ("project_aura_{0}_ota_firmware.bin" -f $Version)
+    ("project_aura_{0}_ota_firmware.bin" -f $displayVersion)
   )
 }
 

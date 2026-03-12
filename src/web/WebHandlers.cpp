@@ -38,10 +38,7 @@
 #include "ui/UiController.h"
 #include "ui/ThemeManager.h"
 
-#ifndef APP_VERSION
-#define APP_VERSION "dev"
-#endif
-
+#include "core/AppVersion.h"
 namespace {
 
 WebHandlerContext *g_ctx = nullptr;
@@ -2527,7 +2524,7 @@ void state_handle_data() {
     network["mqtt_connected"] = context->mqtt_client && context->mqtt_client->connected();
 
     ArduinoJson::JsonObject system = doc["system"].to<ArduinoJson::JsonObject>();
-    system["firmware"] = APP_VERSION;
+    system["firmware"] = AppVersion::fullVersion();
     system["build_date"] = __DATE__;
     system["build_time"] = __TIME__;
     system["uptime"] = format_uptime_human(uptime_s);
