@@ -385,7 +385,7 @@ void UiController::begin() {
     }
     init_ui_defaults();
     if (objects.label_boot_ver) {
-        char version_text[24];
+        char version_text[32];
         snprintf(version_text, sizeof(version_text), "v%s", AppVersion::fullVersion());
         safe_label_set_text(objects.label_boot_ver, version_text);
     }

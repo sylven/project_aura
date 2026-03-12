@@ -102,6 +102,19 @@ void test_ds3231_probe_accepts_nondefault_control_bits() {
     TEST_ASSERT_FALSE(pcf8523.probe());
 }
 
+void test_ds3231_probe_rejects_zero_day_or_month() {
+    seedDs3231Signature();
+
+    Ds3231 ds3231;
+
+    I2cMock::setRegister(Config::DS3231_ADDR, 0x04, 0x00);
+    TEST_ASSERT_FALSE(ds3231.probe());
+
+    seedDs3231Signature();
+    I2cMock::setRegister(Config::DS3231_ADDR, 0x05, 0x00);
+    TEST_ASSERT_FALSE(ds3231.probe());
+}
+
 void test_ds3231_can_match_pcf8523_fallback_shape() {
     seedDs3231ThatMatchesPcf8523Fallback();
 
@@ -155,6 +168,7 @@ int main(int, char **) {
     RUN_TEST(test_pcf8523_probe_falls_back_to_calendar_layout);
     RUN_TEST(test_ds3231_probe_matches_signature);
     RUN_TEST(test_ds3231_probe_accepts_nondefault_control_bits);
+    RUN_TEST(test_ds3231_probe_rejects_zero_day_or_month);
     RUN_TEST(test_ds3231_can_match_pcf8523_fallback_shape);
     RUN_TEST(test_ds3231_read_time_reports_osf_and_valid_time);
     RUN_TEST(test_pcf8523_begin_enables_battery_switching);

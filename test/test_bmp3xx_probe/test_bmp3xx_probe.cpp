@@ -50,9 +50,9 @@ void test_bmp3xx_probe_rejects_shared_address_device_with_matching_first_byte_on
     I2cMock::setRegister(Config::BMP3XX_ADDR_PRIMARY, Config::BMP3XX_REG_OSR, 0xC1);
     I2cMock::setRegister(Config::BMP3XX_ADDR_PRIMARY, Config::BMP3XX_REG_ODR, 0xE0);
 
-    Bmp3xxProbe::Variant variant = Bmp3xxProbe::Variant::Unknown;
+    Bmp3xxProbe::Variant variant = Bmp3xxProbe::Variant::BMP388;
     TEST_ASSERT_FALSE(Bmp3xxProbe::detect(Config::BMP3XX_ADDR_PRIMARY, variant));
-    TEST_ASSERT_EQUAL(static_cast<int>(Bmp3xxProbe::Variant::BMP390),
+    TEST_ASSERT_EQUAL(static_cast<int>(Bmp3xxProbe::Variant::Unknown),
                       static_cast<int>(variant));
 }
 

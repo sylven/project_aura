@@ -60,10 +60,15 @@ bool detect(uint8_t addr, Variant &variant) {
 
     // Shared-address protection against DPS310 and other devices:
     // accept only if several BMP3xx control/status registers fit valid bitmasks.
-    return has_no_reserved_bits(addr, Config::BMP3XX_REG_ERR, kBmp3xxErrReservedMask) &&
-           has_no_reserved_bits(addr, Config::BMP3XX_REG_PWR_CTRL, kBmp3xxPwrCtrlReservedMask) &&
-           has_no_reserved_bits(addr, Config::BMP3XX_REG_OSR, kBmp3xxOsrReservedMask) &&
-           has_no_reserved_bits(addr, Config::BMP3XX_REG_ODR, kBmp3xxOdrReservedMask);
+    const bool accepted =
+        has_no_reserved_bits(addr, Config::BMP3XX_REG_ERR, kBmp3xxErrReservedMask) &&
+        has_no_reserved_bits(addr, Config::BMP3XX_REG_PWR_CTRL, kBmp3xxPwrCtrlReservedMask) &&
+        has_no_reserved_bits(addr, Config::BMP3XX_REG_OSR, kBmp3xxOsrReservedMask) &&
+        has_no_reserved_bits(addr, Config::BMP3XX_REG_ODR, kBmp3xxOdrReservedMask);
+    if (!accepted) {
+        variant = Variant::Unknown;
+    }
+    return accepted;
 }
 
 } // namespace Bmp3xxProbe

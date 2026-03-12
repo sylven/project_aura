@@ -52,9 +52,9 @@ bool hasValidCalendarLayout(const uint8_t *regs) {
            (regs[3] & 0xF8) == 0 &&
            (regs[3] & 0x07) <= 7 &&
            (regs[4] & 0xC0) == 0 &&
-           isBcdWithin(regs[4], 0x3F, 31, true) &&
+           isBcdWithin(regs[4], 0x3F, 31, false) &&
            (regs[5] & 0x60) == 0 &&
-           isBcdWithin(regs[5], 0x1F, 12, true) &&
+           isBcdWithin(regs[5], 0x1F, 12, false) &&
            isBcdByte(regs[6]);
 }
 
