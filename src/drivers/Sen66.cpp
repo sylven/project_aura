@@ -431,17 +431,27 @@ bool Sen66::startMeasurement() {
 }
 
 bool Sen66::setAscRaw(bool enabled) {
-    if (!writeCmdWithWord(Config::SEN66_CMD_ASC, enabled ? 1 : 0)) {
-        return false;
+    bool current = false;
+    if (getAsc(current) && current == enabled) {
+        return true;
     }
-    delay(Config::SEN66_CMD_DELAY_MS);
-    for (int attempt = 0; attempt < 3; ++attempt) {
-        bool readback = false;
-        if (getAsc(readback) && readback == enabled) {
-            return true;
+
+    for (uint8_t write_attempt = 0; write_attempt < Config::SEN66_ASC_WRITE_ATTEMPTS; ++write_attempt) {
+        if (!writeCmdWithWord(Config::SEN66_CMD_ASC, enabled ? 1 : 0)) {
+            delay(Config::SEN66_ASC_RETRY_DELAY_MS);
+            continue;
         }
-        delay(Config::SEN66_CMD_DELAY_MS);
+
+        delay(Config::SEN66_ASC_SETTLE_DELAY_MS);
+        for (uint8_t verify_attempt = 0; verify_attempt < Config::SEN66_ASC_VERIFY_ATTEMPTS; ++verify_attempt) {
+            bool readback = false;
+            if (getAsc(readback) && readback == enabled) {
+                return true;
+            }
+            delay(Config::SEN66_ASC_RETRY_DELAY_MS);
+        }
     }
+
     return false;
 }
 

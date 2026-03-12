@@ -164,6 +164,10 @@ namespace Config {
     constexpr uint32_t SEN66_START_DELAY_MS = 50;
     constexpr uint32_t SEN66_STOP_DELAY_MS = 1400;
     constexpr uint32_t SEN66_CMD_DELAY_MS = 20;
+    constexpr uint32_t SEN66_ASC_SETTLE_DELAY_MS = 120;
+    constexpr uint32_t SEN66_ASC_RETRY_DELAY_MS = 100;
+    constexpr uint8_t SEN66_ASC_WRITE_ATTEMPTS = 2;
+    constexpr uint8_t SEN66_ASC_VERIFY_ATTEMPTS = 6;
     constexpr uint32_t SEN66_FRC_DELAY_MS = 500;
     constexpr uint32_t SEN66_DEVICE_RESET_DELAY_MS = 1200;
     constexpr uint32_t SEN66_START_RETRY_MS = 2000;
