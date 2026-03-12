@@ -5,7 +5,12 @@
 #include "config/AppConfig.h"
 #include "core/Logger.h"
 #include "drivers/Bmp3xxProbe.h"
-#include "drivers/Dps310.h"
+
+// Pull in the production DPS310 implementation under an alias so this suite can
+// coexist with the mock-based SensorManager tests inside the normal native_test env.
+#define Dps310 RealDps310
+#include "../../src/drivers/Dps310.cpp"
+#undef Dps310
 
 namespace {
 
@@ -50,7 +55,7 @@ void test_real_dps310_start_succeeds_after_bmp3xx_probe_rejects_shared_address()
     Bmp3xxProbe::Variant variant = Bmp3xxProbe::Variant::Unknown;
     TEST_ASSERT_FALSE(Bmp3xxProbe::detect(Config::DPS310_ADDR_PRIMARY, variant));
 
-    Dps310 dps310;
+    RealDps310 dps310;
     TEST_ASSERT_TRUE(dps310.begin());
     TEST_ASSERT_TRUE(dps310.start());
     TEST_ASSERT_TRUE(dps310.isOk());

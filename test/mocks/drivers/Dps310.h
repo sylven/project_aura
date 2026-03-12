@@ -1,11 +1,5 @@
 #pragma once
 
-#ifdef USE_REAL_DPS310
-
-#include "../../../src/drivers/Dps310.h"
-
-#else
-
 #include "Arduino.h"
 
 struct Dps310TestState {
@@ -49,5 +43,3 @@ public:
         state().invalidate_called = true;
     }
 };
-
-#endif
