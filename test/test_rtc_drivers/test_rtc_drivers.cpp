@@ -82,26 +82,25 @@ void test_pcf8523_probe_falls_back_to_calendar_layout() {
     TEST_ASSERT_TRUE(pcf8523.probeFallback());
 }
 
-void test_pcf8523_probe_fallback_rejects_invalid_bcd_calendar_fields() {
+void test_pcf8523_probe_fallback_accepts_dirty_pcf8523_layout_with_invalid_calendar() {
     I2cMock::setDevicePresent(Config::PCF8523_ADDR, true);
     const uint8_t control[] = {0x00, 0x00, 0x00};
     const uint8_t time_regs[] = {
         toBcd(12), toBcd(34), toBcd(9), 0x1A, toBcd(3), toBcd(4), toBcd(26)
     };
+    const uint8_t timer_regs[] = {0x35, 0x80, 0x02, 0x10, 0x07};
     I2cMock::setRegisters(Config::PCF8523_ADDR, Config::PCF8523_REG_CONTROL_1,
                           control, sizeof(control));
     I2cMock::setRegisters(Config::PCF8523_ADDR, Config::PCF8523_REG_SECONDS,
                           time_regs, sizeof(time_regs));
+    I2cMock::setRegisters(Config::PCF8523_ADDR, Config::PCF8523_REG_OFFSET,
+                          timer_regs, sizeof(timer_regs));
 
     Pcf8523 pcf8523;
-    TEST_ASSERT_FALSE(pcf8523.probeFallback());
-
-    const uint8_t valid_day_time_regs[] = {
-        toBcd(12), toBcd(34), toBcd(9), toBcd(15), toBcd(3), 0x1A, toBcd(26)
-    };
-    I2cMock::setRegisters(Config::PCF8523_ADDR, Config::PCF8523_REG_SECONDS,
-                          valid_day_time_regs, sizeof(valid_day_time_regs));
-    TEST_ASSERT_FALSE(pcf8523.probeFallback());
+    Ds3231 ds3231;
+    TEST_ASSERT_FALSE(pcf8523.probe());
+    TEST_ASSERT_FALSE(ds3231.probe());
+    TEST_ASSERT_TRUE(pcf8523.probeFallback());
 }
 
 void test_ds3231_probe_matches_signature() {
@@ -137,14 +136,14 @@ void test_ds3231_probe_rejects_zero_day_or_month() {
     TEST_ASSERT_FALSE(ds3231.probe());
 }
 
-void test_ds3231_can_match_pcf8523_fallback_shape() {
+void test_ds3231_no_longer_matches_pcf8523_fallback_shape() {
     seedDs3231ThatMatchesPcf8523Fallback();
 
     Ds3231 ds3231;
     Pcf8523 pcf8523;
 
     TEST_ASSERT_FALSE(pcf8523.probe());
-    TEST_ASSERT_TRUE(pcf8523.probeFallback());
+    TEST_ASSERT_FALSE(pcf8523.probeFallback());
     TEST_ASSERT_TRUE(ds3231.probe());
 }
 
@@ -188,11 +187,11 @@ int main(int, char **) {
     UNITY_BEGIN();
     RUN_TEST(test_pcf8523_probe_matches_project_signature);
     RUN_TEST(test_pcf8523_probe_falls_back_to_calendar_layout);
-    RUN_TEST(test_pcf8523_probe_fallback_rejects_invalid_bcd_calendar_fields);
+    RUN_TEST(test_pcf8523_probe_fallback_accepts_dirty_pcf8523_layout_with_invalid_calendar);
     RUN_TEST(test_ds3231_probe_matches_signature);
     RUN_TEST(test_ds3231_probe_accepts_nondefault_control_bits);
     RUN_TEST(test_ds3231_probe_rejects_zero_day_or_month);
-    RUN_TEST(test_ds3231_can_match_pcf8523_fallback_shape);
+    RUN_TEST(test_ds3231_no_longer_matches_pcf8523_fallback_shape);
     RUN_TEST(test_ds3231_read_time_reports_osf_and_valid_time);
     RUN_TEST(test_pcf8523_begin_enables_battery_switching);
     return UNITY_END();

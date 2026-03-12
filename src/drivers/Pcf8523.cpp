@@ -50,26 +50,29 @@ bool Pcf8523::probe() {
 bool Pcf8523::probeFallback() {
     uint8_t ctrl[3] = { 0 };
     uint8_t time_regs[7] = { 0 };
+    uint8_t timer_regs[5] = { 0 };
     if (!read(Config::PCF8523_REG_CONTROL_1, ctrl, sizeof(ctrl)) ||
-        !read(Config::PCF8523_REG_SECONDS, time_regs, sizeof(time_regs))) {
+        !read(Config::PCF8523_REG_SECONDS, time_regs, sizeof(time_regs)) ||
+        !read(Config::PCF8523_REG_OFFSET, timer_regs, sizeof(timer_regs))) {
         return false;
     }
 
-    const bool ctrl1_reserved_clear = (ctrl[0] & 0x50) == 0;
+    const bool ctrl1_layout_valid = (ctrl[0] & 0x40) == 0;
     const bool ctrl3_reserved_clear = (ctrl[2] & 0x10) == 0;
     const uint8_t weekday_raw = time_regs[4];
-    const bool weekday_valid = (weekday_raw & 0xF8) == 0 &&
-                               isBcdByte(weekday_raw & 0x07) &&
-                               bcd2bin(weekday_raw & 0x07) <= 6;
-    return ctrl1_reserved_clear &&
+    const bool weekday_layout_valid = (weekday_raw & 0xF8) == 0;
+    const bool month_layout_valid = (time_regs[5] & 0xE0) == 0;
+    const bool timer_a_freq_layout_valid =
+        (timer_regs[Config::PCF8523_REG_TMR_A_FREQ_CTRL - Config::PCF8523_REG_OFFSET] & 0xF8) == 0;
+    const bool timer_b_freq_layout_valid =
+        (timer_regs[Config::PCF8523_REG_TMR_B_FREQ_CTRL - Config::PCF8523_REG_OFFSET] & 0xF8) == 0;
+
+    return ctrl1_layout_valid &&
            ctrl3_reserved_clear &&
-           isBcdWithin(time_regs[0], 0x7F, 59, true) &&
-           isBcdWithin(time_regs[1], 0x7F, 59, true) &&
-           isBcdWithin(time_regs[2], 0x3F, 23, true) &&
-           weekday_valid &&
-           isBcdWithin(time_regs[3], 0x3F, 31, false) &&
-           isBcdWithin(time_regs[5], 0x1F, 12, false) &&
-           isBcdByte(time_regs[6]);
+           weekday_layout_valid &&
+           month_layout_valid &&
+           timer_a_freq_layout_valid &&
+           timer_b_freq_layout_valid;
 }
 
 bool Pcf8523::begin() {
