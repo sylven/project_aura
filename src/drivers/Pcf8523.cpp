@@ -15,6 +15,44 @@ constexpr uint8_t kPcf8523BatteryLowFlag = 0x04;
 
 } // namespace
 
+bool Pcf8523::probe() {
+    uint8_t signature[5] = { 0 };
+    if (!read(Config::PCF8523_REG_OFFSET, signature, sizeof(signature))) {
+        return false;
+    }
+
+    const bool primary_match =
+        signature[0] == 0x00 &&
+        signature[1] == 0x00 &&
+        signature[2] == Config::PCF8523_TMR_FREQ_RESET &&
+        signature[4] == Config::PCF8523_TMR_FREQ_RESET;
+    if (primary_match) {
+        return true;
+    }
+
+    uint8_t ctrl[3] = { 0 };
+    uint8_t time_regs[7] = { 0 };
+    if (!read(Config::PCF8523_REG_CONTROL_1, ctrl, sizeof(ctrl)) ||
+        !read(Config::PCF8523_REG_SECONDS, time_regs, sizeof(time_regs))) {
+        return false;
+    }
+
+    const bool ctrl1_reserved_clear = (ctrl[0] & 0x50) == 0;
+    const bool ctrl3_reserved_clear = (ctrl[2] & 0x10) == 0;
+    const uint8_t weekday_raw = time_regs[4];
+    const bool weekday_valid = (weekday_raw & 0xF8) == 0 &&
+                               bcd2bin(weekday_raw & 0x07) <= 6;
+    const int day = bcd2bin(time_regs[3] & 0x3F);
+    const int month = bcd2bin(time_regs[5] & 0x1F);
+    return ctrl1_reserved_clear &&
+           ctrl3_reserved_clear &&
+           weekday_valid &&
+           day >= 1 &&
+           day <= 31 &&
+           month >= 1 &&
+           month <= 12;
+}
+
 bool Pcf8523::begin() {
     // Enable battery switch-over (standard mode, battery low detection on).
     // Default after POR is 0xE0 (switch-over disabled) which causes

@@ -14,6 +14,17 @@
 
 #include "core/Logger.h"
 
+const char *TimeManager::rtcLabel() const {
+    switch (rtc_type_) {
+        case RtcType::Pcf8523:
+            return Pcf8523::label();
+        case RtcType::Ds3231:
+            return Ds3231::label();
+        default:
+            return "RTC";
+    }
+}
+
 void TimeManager::begin(StorageManager &storage) {
     storage_ = &storage;
     const auto &cfg = storage.config();
@@ -27,13 +38,21 @@ void TimeManager::begin(StorageManager &storage) {
 }
 
 bool TimeManager::initRtc() {
+    rtc_type_ = RtcType::None;
     rtc_present_ = false;
     rtc_valid_ = false;
     rtc_lost_power_ = false;
     rtc_battery_low_ = false;
     last_rtc_status_poll_ms_ = 0;
 
-    rtc_.begin();
+    if (!detectRtc()) {
+        return false;
+    }
+    if (!rtcBegin()) {
+        LOGW("RTC", "%s init failed", rtcLabel());
+        rtc_type_ = RtcType::None;
+        return false;
+    }
     delay(500);
     tm utc_tm = {};
     bool osc_stop = false;
@@ -44,7 +63,7 @@ bool TimeManager::initRtc() {
             delay(Config::RTC_INIT_RETRY_MS);
             LOGD("RTC", "retry %u", attempt);
         }
-        if (!rtc_.readTime(utc_tm, osc_stop, time_valid)) {
+        if (!rtcReadTime(utc_tm, osc_stop, time_valid)) {
             continue;
         }
         read_ok = true;
@@ -58,7 +77,7 @@ bool TimeManager::initRtc() {
     rtc_present_ = true;
     rtc_lost_power_ = osc_stop;
     bool battery_low = false;
-    if (rtc_.isBatteryLow(battery_low)) {
+    if (rtcReadBatteryLow(battery_low)) {
         applyRtcBatteryLowState(battery_low, true);
     }
     last_rtc_status_poll_ms_ = millis();
@@ -69,7 +88,7 @@ bool TimeManager::initRtc() {
     time_t epoch = makeUtcEpoch(utc_tm);
     if (epoch > Config::TIME_VALID_EPOCH) {
         if (osc_stop) {
-            if (rtc_.clearOscillatorStop()) {
+            if (rtcClearLostPower()) {
                 rtc_lost_power_ = false;
             } else {
                 LOGW("RTC", "failed to clear OS bit");
@@ -234,7 +253,7 @@ bool TimeManager::getLocalTime(tm &out) {
             tm utc_tm = {};
             bool osc_stop = false;
             bool time_valid = false;
-            if (rtc_.readTime(utc_tm, osc_stop, time_valid)) {
+            if (rtcReadTime(utc_tm, osc_stop, time_valid)) {
                 rtc_lost_power_ = osc_stop;
                 rtc_valid_ = time_valid && !osc_stop;
                 if (rtc_valid_) {
@@ -349,7 +368,7 @@ bool TimeManager::rtcWriteFromEpoch(time_t epoch) {
     }
     tm utc_tm = {};
     gmtime_r(&epoch, &utc_tm);
-    if (!rtc_.writeTime(utc_tm)) {
+    if (!rtcWriteTime(utc_tm)) {
         return false;
     }
     rtc_valid_ = true;
@@ -479,7 +498,7 @@ TimeManager::PollResult TimeManager::pollRtcStatus(uint32_t now_ms) {
     tm utc_tm = {};
     bool osc_stop = false;
     bool time_valid = false;
-    if (rtc_.readTime(utc_tm, osc_stop, time_valid)) {
+    if (rtcReadTime(utc_tm, osc_stop, time_valid)) {
         bool rtc_valid = false;
         if (time_valid) {
             const time_t epoch = makeUtcEpoch(utc_tm);
@@ -494,7 +513,7 @@ TimeManager::PollResult TimeManager::pollRtcStatus(uint32_t now_ms) {
     }
 
     bool battery_low = false;
-    if (rtc_.isBatteryLow(battery_low)) {
+    if (rtcReadBatteryLow(battery_low)) {
         if (applyRtcBatteryLowState(battery_low, true)) {
             result.state_changed = true;
         }
@@ -502,6 +521,77 @@ TimeManager::PollResult TimeManager::pollRtcStatus(uint32_t now_ms) {
     }
 
     return result;
+}
+
+bool TimeManager::detectRtc() {
+    if (ds3231_.probe()) {
+        rtc_type_ = RtcType::Ds3231;
+        LOGI("RTC", "%s found at 0x%02X", rtcLabel(), Config::DS3231_ADDR);
+        return true;
+    }
+    if (pcf8523_.probe()) {
+        rtc_type_ = RtcType::Pcf8523;
+        LOGI("RTC", "%s found at 0x%02X", rtcLabel(), Config::PCF8523_ADDR);
+        return true;
+    }
+    rtc_type_ = RtcType::None;
+    return false;
+}
+
+bool TimeManager::rtcBegin() {
+    switch (rtc_type_) {
+        case RtcType::Pcf8523:
+            return pcf8523_.begin();
+        case RtcType::Ds3231:
+            return ds3231_.begin();
+        default:
+            return false;
+    }
+}
+
+bool TimeManager::rtcReadTime(tm &out, bool &osc_stop, bool &valid) {
+    switch (rtc_type_) {
+        case RtcType::Pcf8523:
+            return pcf8523_.readTime(out, osc_stop, valid);
+        case RtcType::Ds3231:
+            return ds3231_.readTime(out, osc_stop, valid);
+        default:
+            return false;
+    }
+}
+
+bool TimeManager::rtcWriteTime(const tm &utc_tm) {
+    switch (rtc_type_) {
+        case RtcType::Pcf8523:
+            return pcf8523_.writeTime(utc_tm);
+        case RtcType::Ds3231:
+            return ds3231_.writeTime(utc_tm);
+        default:
+            return false;
+    }
+}
+
+bool TimeManager::rtcClearLostPower() {
+    switch (rtc_type_) {
+        case RtcType::Pcf8523:
+            return pcf8523_.clearOscillatorStop();
+        case RtcType::Ds3231:
+            return ds3231_.clearOscillatorStop();
+        default:
+            return false;
+    }
+}
+
+bool TimeManager::rtcReadBatteryLow(bool &low) {
+    switch (rtc_type_) {
+        case RtcType::Pcf8523:
+            return pcf8523_.isBatteryLow(low);
+        case RtcType::Ds3231:
+            return ds3231_.isBatteryLow(low);
+        default:
+            low = false;
+            return false;
+    }
 }
 
 bool TimeManager::applyRtcBatteryLowState(bool battery_low, bool log_transition) {

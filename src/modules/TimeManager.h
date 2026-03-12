@@ -10,6 +10,7 @@
 #include <time.h>
 #include "config/AppConfig.h"
 #include "config/AppData.h"
+#include "drivers/Ds3231.h"
 #include "drivers/Pcf8523.h"
 #include "modules/StorageManager.h"
 
@@ -55,6 +56,7 @@ public:
     bool isRtcValid() const { return rtc_valid_; }
     bool isRtcLostPower() const { return rtc_lost_power_; }
     bool isRtcBatteryLow() const { return rtc_battery_low_; }
+    const char *rtcLabel() const;
 
     static int findTimezoneIndex(const char *name);
     static void formatTzOffset(int offset_min, char *out, size_t len);
@@ -62,11 +64,23 @@ public:
     static int daysInMonth(int year, int month);
 
 private:
+    enum class RtcType : uint8_t {
+        None = 0,
+        Pcf8523,
+        Ds3231
+    };
+
     void applyTimezone();
     static void buildFixedTzString(int offset_min, char *out, size_t len);
     time_t makeUtcEpoch(const tm &utc_tm);
     bool setSystemTime(time_t epoch);
     bool rtcWriteFromEpoch(time_t epoch);
+    bool detectRtc();
+    bool rtcBegin();
+    bool rtcReadTime(tm &out, bool &osc_stop, bool &valid);
+    bool rtcWriteTime(const tm &utc_tm);
+    bool rtcClearLostPower();
+    bool rtcReadBatteryLow(bool &low);
     bool requestNtpSync();
     bool syncNtpWithWifi();
     PollResult ntpPoll(uint32_t now_ms);
@@ -76,7 +90,9 @@ private:
     static void buildTimezonePosix(const TimeZoneEntry &tz, char *out, size_t len);
 
     StorageManager *storage_ = nullptr;
-    Pcf8523 rtc_;
+    Pcf8523 pcf8523_;
+    Ds3231 ds3231_;
+    RtcType rtc_type_ = RtcType::None;
 
     bool rtc_present_ = false;
     bool rtc_valid_ = false;

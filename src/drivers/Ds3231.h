@@ -5,10 +5,11 @@
 // Purchase a Commercial License: see COMMERCIAL_LICENSE_SUMMARY.md
 
 #pragma once
+
 #include <Arduino.h>
 #include <time.h>
 
-class Pcf8523 {
+class Ds3231 {
 public:
     bool probe();
     bool begin();
@@ -16,12 +17,11 @@ public:
     bool writeTime(const tm &utc_tm);
     bool clearOscillatorStop();
     bool isBatteryLow(bool &low);
-    static const char *label() { return "PCF8523"; }
+    static const char *label() { return "DS3231"; }
 
 private:
     static uint8_t bcd2bin(uint8_t val);
     static uint8_t bin2bcd(uint8_t val);
     bool read(uint8_t reg, uint8_t *buf, size_t len);
     bool write(uint8_t reg, const uint8_t *buf, size_t len);
-    bool readControl3(uint8_t &value);
 };
