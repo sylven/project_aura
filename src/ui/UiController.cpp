@@ -1852,6 +1852,7 @@ void UiController::init_ui_defaults() {
 
     set_visible(objects.container_about, false);
     set_visible(objects.container_web_page, false);
+    set_visible(objects.container_rtc_detection, false);
 
     if (objects.btn_info_graph) {
         lv_obj_add_flag(objects.btn_info_graph, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_CHECKABLE);
@@ -1961,6 +1962,22 @@ void UiController::init_ui_defaults() {
         // AP state indicator is managed manually in update_wifi_ui().
         lv_obj_clear_flag(objects.btn_wifi_start_ap, LV_OBJ_FLAG_CHECKABLE);
     }
+    if (objects.chip_rtc_status) {
+        lv_obj_add_flag(objects.chip_rtc_status, LV_OBJ_FLAG_CLICKABLE);
+        lv_obj_set_ext_click_area(objects.chip_rtc_status, 12);
+    }
+    if (objects.chip_rtc_detection_auto) {
+        lv_obj_add_flag(objects.chip_rtc_detection_auto, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_CHECKABLE);
+        lv_obj_set_ext_click_area(objects.chip_rtc_detection_auto, 12);
+    }
+    if (objects.chip_rtc_detection_pcf8523) {
+        lv_obj_add_flag(objects.chip_rtc_detection_pcf8523, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_CHECKABLE);
+        lv_obj_set_ext_click_area(objects.chip_rtc_detection_pcf8523, 12);
+    }
+    if (objects.chip_rtc_detection_ds3231) {
+        lv_obj_add_flag(objects.chip_rtc_detection_ds3231, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_CHECKABLE);
+        lv_obj_set_ext_click_area(objects.chip_rtc_detection_ds3231, 12);
+    }
 
     if (objects.wifi_status_icon_1) lv_obj_add_flag(objects.wifi_status_icon_1, LV_OBJ_FLAG_HIDDEN);
     if (objects.wifi_status_icon_2) lv_obj_add_flag(objects.wifi_status_icon_2, LV_OBJ_FLAG_HIDDEN);
@@ -2021,6 +2038,8 @@ void UiController::init_ui_defaults() {
     }
     ui_language = storage.config().language;
     date_units_mdy = storage.config().units_mdy;
+    rtc_detection_saved_mode_ = storage.config().rtc_mode;
+    rtc_detection_pending_mode_ = rtc_detection_saved_mode_;
     const bool expected_units_mdy = !temp_units_c;
     if (date_units_mdy != expected_units_mdy) {
         date_units_mdy = expected_units_mdy;

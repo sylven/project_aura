@@ -210,6 +210,10 @@ void UiEventBinder::bindAvailableEvents(UiController &owner, int screen_id) {
         {objects.btn_confirm_cancel, UiController::on_confirm_cancel_event_cb, LV_EVENT_CLICKED},
         {objects.btn_datetime_back, UiController::on_datetime_back_event_cb, LV_EVENT_CLICKED},
         {objects.btn_datetime_apply, UiController::on_datetime_apply_event_cb, LV_EVENT_CLICKED},
+        {objects.chip_rtc_status, UiController::on_rtc_status_event_cb, LV_EVENT_CLICKED},
+        {objects.chip_rtc_detection_auto, UiController::on_rtc_detection_auto_event_cb, LV_EVENT_CLICKED},
+        {objects.chip_rtc_detection_pcf8523, UiController::on_rtc_detection_pcf8523_event_cb, LV_EVENT_CLICKED},
+        {objects.chip_rtc_detection_ds3231, UiController::on_rtc_detection_ds3231_event_cb, LV_EVENT_CLICKED},
         {objects.btn_tz_plus, UiController::on_tz_plus_event_cb, LV_EVENT_CLICKED},
         {objects.btn_tz_minus, UiController::on_tz_minus_event_cb, LV_EVENT_CLICKED},
         {objects.btn_set_time_hours_minus, UiController::on_set_time_hours_minus_event_cb, LV_EVENT_CLICKED},
@@ -446,6 +450,9 @@ void UiEventBinder::applyToggleStylesForAvailableObjects(UiController &owner, in
         objects.btn_dak_manual_timer_toggle_2hours,
         objects.btn_dak_manual_timer_toggle_4hours,
         objects.btn_dak_manual_timer_toggle_8hours,
+        objects.chip_rtc_detection_auto,
+        objects.chip_rtc_detection_pcf8523,
+        objects.chip_rtc_detection_ds3231,
     };
 
     for (lv_obj_t *btn : toggle_buttons) {

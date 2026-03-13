@@ -134,6 +134,10 @@ void UiController::on_backlight_wake_minutes_plus_event_cb(lv_event_t *e) { if (
 void UiController::on_language_event_cb(lv_event_t *e) { if (instance_) instance_->on_language_event(e); }
 void UiController::on_datetime_back_event_cb(lv_event_t *e) { if (instance_) instance_->on_datetime_back_event(e); }
 void UiController::on_datetime_apply_event_cb(lv_event_t *e) { if (instance_) instance_->on_datetime_apply_event(e); }
+void UiController::on_rtc_status_event_cb(lv_event_t *e) { if (instance_) instance_->on_rtc_status_event(e); }
+void UiController::on_rtc_detection_auto_event_cb(lv_event_t *e) { if (instance_) instance_->on_rtc_detection_auto_event(e); }
+void UiController::on_rtc_detection_pcf8523_event_cb(lv_event_t *e) { if (instance_) instance_->on_rtc_detection_pcf8523_event(e); }
+void UiController::on_rtc_detection_ds3231_event_cb(lv_event_t *e) { if (instance_) instance_->on_rtc_detection_ds3231_event(e); }
 void UiController::on_ntp_toggle_event_cb(lv_event_t *e) { if (instance_) instance_->on_ntp_toggle_event(e); }
 void UiController::on_tz_plus_event_cb(lv_event_t *e) { if (instance_) instance_->on_tz_plus_event(e); }
 void UiController::on_tz_minus_event_cb(lv_event_t *e) { if (instance_) instance_->on_tz_minus_event(e); }
@@ -1822,6 +1826,23 @@ void UiController::on_datetime_back_event(lv_event_t *e) {
     if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
         return;
     }
+    if (rtc_detection_overlay_visible()) {
+        if (rtc_detection_pending_mode_ == rtc_detection_saved_mode_) {
+            close_rtc_detection_overlay();
+            return;
+        }
+        if (!storage.saveRtcMode(rtc_detection_pending_mode_)) {
+            datetime_ui_dirty = true;
+            return;
+        }
+        LOGI("UI", "RTC mode set to %s, restart requested",
+             TimeManager::rtcModeLabel(rtc_detection_pending_mode_));
+        close_rtc_detection_overlay();
+        esp_wifi_stop();
+        lvgl_port_prepare_restart();
+        delay(100);
+        safe_restart_via_core0();
+    }
     if (datetime_changed && !timeManager.isManualLocked(millis())) {
         if (timeManager.setLocalTime(set_year, set_month, set_day, set_hour, set_minute)) {
             LOGI("UI", "datetime auto-applied");
@@ -1832,6 +1853,34 @@ void UiController::on_datetime_back_event(lv_event_t *e) {
     }
     datetime_changed = false;
     pending_screen_id = SCREEN_ID_PAGE_SETTINGS;
+}
+
+void UiController::on_rtc_status_event(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+        return;
+    }
+    open_rtc_detection_overlay();
+}
+
+void UiController::on_rtc_detection_auto_event(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+        return;
+    }
+    set_rtc_detection_pending_mode(Config::RtcMode::Auto);
+}
+
+void UiController::on_rtc_detection_pcf8523_event(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+        return;
+    }
+    set_rtc_detection_pending_mode(Config::RtcMode::Pcf8523);
+}
+
+void UiController::on_rtc_detection_ds3231_event(lv_event_t *e) {
+    if (lv_event_get_code(e) != LV_EVENT_CLICKED) {
+        return;
+    }
+    set_rtc_detection_pending_mode(Config::RtcMode::Ds3231);
 }
 
 void UiController::on_datetime_apply_event(lv_event_t *e) {

@@ -56,7 +56,9 @@ public:
     bool isRtcValid() const { return rtc_valid_; }
     bool isRtcLostPower() const { return rtc_lost_power_; }
     bool isRtcBatteryLow() const { return rtc_battery_low_; }
+    Config::RtcMode configuredRtcMode() const { return rtc_mode_; }
     const char *rtcLabel() const;
+    static const char *rtcModeLabel(Config::RtcMode mode);
 
     static int findTimezoneIndex(const char *name);
     static void formatTzOffset(int offset_min, char *out, size_t len);
@@ -97,6 +99,7 @@ private:
     Pcf8523 pcf8523_;
     Ds3231 ds3231_;
     RtcType rtc_type_ = RtcType::None;
+    Config::RtcMode rtc_mode_ = Config::RtcMode::Auto;
 
     bool rtc_present_ = false;
     bool rtc_valid_ = false;

@@ -91,6 +91,30 @@ void test_save_dac_auto_state_rolls_back_on_failure() {
     TEST_ASSERT_TRUE(storage.config().dac_auto_armed);
 }
 
+void test_save_rtc_mode_persists_selection() {
+    StorageManager storage;
+    storage.begin();
+
+    TEST_ASSERT_TRUE(storage.saveRtcMode(Config::RtcMode::Ds3231));
+    TEST_ASSERT_EQUAL_INT(static_cast<int>(Config::RtcMode::Ds3231),
+                          static_cast<int>(storage.config().rtc_mode));
+
+    TEST_ASSERT_TRUE(storage.saveRtcMode(Config::RtcMode::Pcf8523));
+    TEST_ASSERT_EQUAL_INT(static_cast<int>(Config::RtcMode::Pcf8523),
+                          static_cast<int>(storage.config().rtc_mode));
+}
+
+void test_save_rtc_mode_rolls_back_on_failure() {
+    StorageManager storage;
+    storage.begin();
+    TEST_ASSERT_TRUE(storage.saveRtcMode(Config::RtcMode::Pcf8523));
+
+    StorageManager::setTestForceSaveFailure(true);
+    TEST_ASSERT_FALSE(storage.saveRtcMode(Config::RtcMode::Ds3231));
+    TEST_ASSERT_EQUAL_INT(static_cast<int>(Config::RtcMode::Pcf8523),
+                          static_cast<int>(storage.config().rtc_mode));
+}
+
 int main(int, char **) {
     UNITY_BEGIN();
     RUN_TEST(test_save_wifi_settings_preserves_spaces);
@@ -99,5 +123,7 @@ int main(int, char **) {
     RUN_TEST(test_save_mqtt_settings_rolls_back_on_failure);
     RUN_TEST(test_save_dac_auto_state_persists_mode_and_armed);
     RUN_TEST(test_save_dac_auto_state_rolls_back_on_failure);
+    RUN_TEST(test_save_rtc_mode_persists_selection);
+    RUN_TEST(test_save_rtc_mode_rolls_back_on_failure);
     return UNITY_END();
 }

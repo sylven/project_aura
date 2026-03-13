@@ -19,6 +19,39 @@
 
 using namespace Config;
 
+namespace {
+
+const char *rtc_runtime_status_text(const TimeManager &timeManager) {
+    if (!timeManager.isRtcPresent()) {
+        return "Status: Not found";
+    }
+    if (timeManager.isRtcBatteryLow()) {
+        return "Status: Battery low";
+    }
+    if (timeManager.isRtcLostPower()) {
+        return "Status: Lost power";
+    }
+    if (!timeManager.isRtcValid()) {
+        return "Status: Time invalid";
+    }
+    return "Status: OK";
+}
+
+lv_color_t rtc_runtime_status_color(const TimeManager &timeManager) {
+    if (!timeManager.isRtcPresent()) {
+        return lv_color_hex(0xffeb3b);
+    }
+    if (timeManager.isRtcBatteryLow() || timeManager.isRtcLostPower()) {
+        return lv_color_hex(0xffeb3b);
+    }
+    if (!timeManager.isRtcValid()) {
+        return lv_color_hex(0xff1100);
+    }
+    return lv_color_hex(0x00c853);
+}
+
+} // namespace
+
 void UiController::update_datetime_ui() {
     const bool controls_enabled = !timeManager.isManualLocked(millis());
     // Keep editable fields in sync with system time unless user is actively editing.
@@ -138,6 +171,8 @@ void UiController::update_datetime_ui() {
         }
     }
 
+    update_rtc_detection_ui();
+
     if (objects.label_wifi_status_1) {
         bool wifi_enabled = networkManager.isEnabled();
         AuraNetworkManager::WifiState wifi_state = networkManager.state();
@@ -151,6 +186,94 @@ void UiController::update_datetime_ui() {
             safe_label_set_text(objects.label_wifi_status_1, UiText::StatusConn());
             if (objects.chip_wifi_status) set_chip_color(objects.chip_wifi_status, color_blue());
         }
+    }
+}
+
+bool UiController::rtc_detection_overlay_visible() const {
+    return objects.container_rtc_detection &&
+           !lv_obj_has_flag(objects.container_rtc_detection, LV_OBJ_FLAG_HIDDEN);
+}
+
+void UiController::open_rtc_detection_overlay() {
+    if (!objects.container_rtc_detection) {
+        return;
+    }
+    rtc_detection_saved_mode_ = storage.config().rtc_mode;
+    rtc_detection_pending_mode_ = rtc_detection_saved_mode_;
+    lv_obj_clear_flag(objects.container_rtc_detection, LV_OBJ_FLAG_HIDDEN);
+    datetime_ui_dirty = true;
+}
+
+void UiController::close_rtc_detection_overlay() {
+    if (!objects.container_rtc_detection) {
+        return;
+    }
+    lv_obj_add_flag(objects.container_rtc_detection, LV_OBJ_FLAG_HIDDEN);
+    datetime_ui_dirty = true;
+}
+
+void UiController::set_rtc_detection_pending_mode(Config::RtcMode mode) {
+    rtc_detection_pending_mode_ = mode;
+    datetime_ui_dirty = true;
+}
+
+void UiController::update_rtc_detection_ui() {
+    if (!objects.container_rtc_detection) {
+        return;
+    }
+    if (!rtc_detection_overlay_visible()) {
+        return;
+    }
+
+    const auto apply_selection = [&](lv_obj_t *chip, bool selected) {
+        if (!chip) {
+            return;
+        }
+        if (selected) {
+            lv_obj_add_state(chip, LV_STATE_CHECKED);
+            set_chip_color(chip, color_green());
+        } else {
+            lv_obj_clear_state(chip, LV_STATE_CHECKED);
+            set_chip_color(chip, color_inactive());
+        }
+    };
+
+    apply_selection(objects.chip_rtc_detection_auto,
+                    rtc_detection_pending_mode_ == Config::RtcMode::Auto);
+    apply_selection(objects.chip_rtc_detection_pcf8523,
+                    rtc_detection_pending_mode_ == Config::RtcMode::Pcf8523);
+    apply_selection(objects.chip_rtc_detection_ds3231,
+                    rtc_detection_pending_mode_ == Config::RtcMode::Ds3231);
+
+    if (objects.label_rtc_detection_title_2) {
+        char line[48];
+        if (rtc_detection_pending_mode_ == Config::RtcMode::Auto) {
+            const char *detected = timeManager.isRtcPresent() ? timeManager.rtcLabel() : "none";
+            snprintf(line, sizeof(line), "Detected: %s", detected);
+        } else {
+            snprintf(line,
+                     sizeof(line),
+                     "Selected: %s",
+                     TimeManager::rtcModeLabel(rtc_detection_pending_mode_));
+        }
+        safe_label_set_text(objects.label_rtc_detection_title_2, line);
+        lv_obj_set_style_text_color(objects.label_rtc_detection_title_2,
+                                    active_text_color(),
+                                    LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+
+    if (objects.label_rtc_detection_title_3) {
+        const bool pending_changed = rtc_detection_pending_mode_ != rtc_detection_saved_mode_;
+        const char *status_text = pending_changed
+                                      ? "Status: Restart required to apply changes"
+                                      : rtc_runtime_status_text(timeManager);
+        const lv_color_t status_color = pending_changed
+                                            ? color_yellow()
+                                            : rtc_runtime_status_color(timeManager);
+        safe_label_set_text(objects.label_rtc_detection_title_3, status_text);
+        lv_obj_set_style_text_color(objects.label_rtc_detection_title_3,
+                                    status_color,
+                                    LV_PART_MAIN | LV_STATE_DEFAULT);
     }
 }
 
@@ -605,7 +728,6 @@ void UiController::update_mqtt_texts() {
 
 void UiController::update_datetime_texts() {
     if (objects.label_datetime_title) safe_label_set_text(objects.label_datetime_title, UiText::LabelDateTimeTitle());
-    if (objects.label_btn_datetime_back) safe_label_set_text(objects.label_btn_datetime_back, UiText::LabelSettingsBack());
     if (objects.label_timezone_title) safe_label_set_text(objects.label_timezone_title, UiText::LabelTimeZone());
     if (objects.label_ntp_title) safe_label_set_text(objects.label_ntp_title, UiText::LabelNtpAutoSync());
     if (objects.label_btn_ntp_toggle) safe_label_set_text(objects.label_btn_ntp_toggle, UiText::MqttToggleLabel());

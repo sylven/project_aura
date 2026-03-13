@@ -79,12 +79,24 @@ const char *TimeManager::rtcLabel() const {
     }
 }
 
+const char *TimeManager::rtcModeLabel(Config::RtcMode mode) {
+    switch (mode) {
+        case Config::RtcMode::Pcf8523:
+            return Pcf8523::label();
+        case Config::RtcMode::Ds3231:
+            return Ds3231::label();
+        default:
+            return "Auto";
+    }
+}
+
 void TimeManager::begin(StorageManager &storage) {
     storage_ = &storage;
     const auto &cfg = storage.config();
     ntp_enabled_pref_ = cfg.ntp_enabled;
     ntp_enabled_ = ntp_enabled_pref_;
     tz_index_ = cfg.tz_index;
+    rtc_mode_ = Config::clampRtcMode(static_cast<int>(cfg.rtc_mode));
     if (tz_index_ < 0) {
         tz_index_ = findTimezoneIndex("Europe/London");
     }
@@ -114,7 +126,8 @@ bool TimeManager::initRtc() {
     bool osc_stop = false;
     bool time_valid = false;
     bool read_ok = readRtcInitState(utc_tm, osc_stop, time_valid);
-    if (rtc_type_ == RtcType::Ds3231 &&
+    if (rtc_mode_ == Config::RtcMode::Auto &&
+        rtc_type_ == RtcType::Ds3231 &&
         rtc_probe_needs_pcf_verification_ &&
         (!read_ok || (!osc_stop && !time_valid))) {
         if (retryWeakDs3231AsPcf8523(utc_tm, osc_stop, time_valid)) {
@@ -648,6 +661,31 @@ bool TimeManager::noteRtcReadFailure(bool log_transition) {
 
 bool TimeManager::detectRtc() {
     rtc_probe_needs_pcf_verification_ = false;
+
+    if (rtc_mode_ == Config::RtcMode::Pcf8523) {
+        if (pcf8523_.probe() || pcf8523_.probeFallback()) {
+            rtc_type_ = RtcType::Pcf8523;
+            LOGI("RTC", "%s selected manually at 0x%02X", rtcLabel(), Config::PCF8523_ADDR);
+            return true;
+        }
+        rtc_type_ = RtcType::None;
+        return false;
+    }
+
+    if (rtc_mode_ == Config::RtcMode::Ds3231) {
+        const Ds3231::ProbeStrength probe = ds3231_.probeStrength();
+        if (probe != Ds3231::ProbeStrength::None) {
+            rtc_type_ = RtcType::Ds3231;
+            if (probe == Ds3231::ProbeStrength::Weak) {
+                LOGI("RTC", "%s weak signature at 0x%02X (manual)", rtcLabel(), Config::DS3231_ADDR);
+            } else {
+                LOGI("RTC", "%s selected manually at 0x%02X", rtcLabel(), Config::DS3231_ADDR);
+            }
+            return true;
+        }
+        rtc_type_ = RtcType::None;
+        return false;
+    }
 
     // Prefer the explicit PCF8523 signature first on the shared 0x68 address.
     if (pcf8523_.probe()) {

@@ -334,6 +334,7 @@ private:
     const char *pressure_display_unit() const;
     bool pressure_display_uses_inhg() const { return !temp_units_c; }
     void update_datetime_ui();
+    void update_rtc_detection_ui();
     void update_settings_texts();
     void update_main_texts();
     void update_sensor_info_texts();
@@ -358,6 +359,10 @@ private:
     void safe_label_set_text_static(lv_obj_t *obj, const char *new_text);
     void update_qrcode_if_needed(lv_obj_t *obj, const char *text, char *cache, size_t cache_size);
     void reset_dynamic_url_caches();
+    void open_rtc_detection_overlay();
+    void close_rtc_detection_overlay();
+    bool rtc_detection_overlay_visible() const;
+    void set_rtc_detection_pending_mode(Config::RtcMode mode);
     lv_color_t color_inactive();
     lv_color_t color_green();
     lv_color_t color_yellow();
@@ -483,6 +488,10 @@ private:
     void on_language_event(lv_event_t *e);
     void on_datetime_back_event(lv_event_t *e);
     void on_datetime_apply_event(lv_event_t *e);
+    void on_rtc_status_event(lv_event_t *e);
+    void on_rtc_detection_auto_event(lv_event_t *e);
+    void on_rtc_detection_pcf8523_event(lv_event_t *e);
+    void on_rtc_detection_ds3231_event(lv_event_t *e);
     void on_ntp_toggle_event(lv_event_t *e);
     void on_tz_plus_event(lv_event_t *e);
     void on_tz_minus_event(lv_event_t *e);
@@ -637,6 +646,10 @@ private:
     static void on_language_event_cb(lv_event_t *e);
     static void on_datetime_back_event_cb(lv_event_t *e);
     static void on_datetime_apply_event_cb(lv_event_t *e);
+    static void on_rtc_status_event_cb(lv_event_t *e);
+    static void on_rtc_detection_auto_event_cb(lv_event_t *e);
+    static void on_rtc_detection_pcf8523_event_cb(lv_event_t *e);
+    static void on_rtc_detection_ds3231_event_cb(lv_event_t *e);
     static void on_ntp_toggle_event_cb(lv_event_t *e);
     static void on_tz_plus_event_cb(lv_event_t *e);
     static void on_tz_minus_event_cb(lv_event_t *e);
@@ -785,6 +798,8 @@ private:
     int set_month = 1;
     int set_year = 2024;
     bool datetime_changed = false;
+    Config::RtcMode rtc_detection_saved_mode_ = Config::RtcMode::Auto;
+    Config::RtcMode rtc_detection_pending_mode_ = Config::RtcMode::Auto;
     bool alert_blink_syncing = false;
     bool alert_blink_before_night = true;
     bool night_blink_restore_pending = false;

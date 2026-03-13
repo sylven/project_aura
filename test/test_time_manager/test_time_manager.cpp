@@ -45,6 +45,21 @@ void seedDs3231WithOldValidTime() {
                           time_regs, sizeof(time_regs));
 }
 
+void seedDs3231WithFreshValidTime() {
+    I2cMock::setDevicePresent(Config::DS3231_ADDR, true);
+    I2cMock::setReadWrap(Config::DS3231_ADDR, Config::DS3231_REG_TEMP_LSB);
+
+    const uint8_t meta_regs[] = {0x00, 0x00, 0x19, 0x40};
+    I2cMock::setRegisters(Config::DS3231_ADDR, Config::DS3231_REG_STATUS,
+                          meta_regs, sizeof(meta_regs));
+
+    const uint8_t time_regs[] = {
+        toBcd(56), toBcd(34), toBcd(12), 0x02, toBcd(15), toBcd(4), toBcd(26)
+    };
+    I2cMock::setRegisters(Config::DS3231_ADDR, Config::DS3231_REG_SECONDS,
+                          time_regs, sizeof(time_regs));
+}
+
 void seedDs3231WithDirtyCalendar() {
     I2cMock::setDevicePresent(Config::DS3231_ADDR, true);
     I2cMock::setReadWrap(Config::DS3231_ADDR, Config::DS3231_REG_TEMP_LSB);
@@ -239,6 +254,59 @@ void test_time_manager_init_rtc_retries_weak_ds3231_candidate_as_pcf8523() {
     TEST_ASSERT_EQUAL_STRING("PCF8523", manager.rtcLabel());
 }
 
+void test_time_manager_init_rtc_respects_manual_pcf8523_mode() {
+    seedPcf8523WithFreshValidTime();
+
+    StorageManager storage;
+    storage.begin();
+    storage.config().rtc_mode = Config::RtcMode::Pcf8523;
+
+    TimeManager manager;
+    manager.begin(storage);
+
+    TEST_ASSERT_TRUE(manager.initRtc());
+    TEST_ASSERT_TRUE(manager.isRtcPresent());
+    TEST_ASSERT_TRUE(manager.isRtcValid());
+    TEST_ASSERT_EQUAL_INT(static_cast<int>(Config::RtcMode::Pcf8523),
+                          static_cast<int>(manager.configuredRtcMode()));
+    TEST_ASSERT_EQUAL_STRING("PCF8523", manager.rtcLabel());
+}
+
+void test_time_manager_init_rtc_respects_manual_ds3231_mode() {
+    seedDs3231WithFreshValidTime();
+
+    StorageManager storage;
+    storage.begin();
+    storage.config().rtc_mode = Config::RtcMode::Ds3231;
+
+    TimeManager manager;
+    manager.begin(storage);
+
+    TEST_ASSERT_TRUE(manager.initRtc());
+    TEST_ASSERT_TRUE(manager.isRtcPresent());
+    TEST_ASSERT_TRUE(manager.isRtcValid());
+    TEST_ASSERT_EQUAL_INT(static_cast<int>(Config::RtcMode::Ds3231),
+                          static_cast<int>(manager.configuredRtcMode()));
+    TEST_ASSERT_EQUAL_STRING("DS3231", manager.rtcLabel());
+}
+
+void test_time_manager_init_rtc_manual_ds3231_mode_does_not_fall_back_to_pcf8523() {
+    seedPcf8523WithFreshValidTime();
+
+    StorageManager storage;
+    storage.begin();
+    storage.config().rtc_mode = Config::RtcMode::Ds3231;
+
+    TimeManager manager;
+    manager.begin(storage);
+
+    TEST_ASSERT_FALSE(manager.initRtc());
+    TEST_ASSERT_FALSE(manager.isRtcPresent());
+    TEST_ASSERT_EQUAL_INT(static_cast<int>(Config::RtcMode::Ds3231),
+                          static_cast<int>(manager.configuredRtcMode()));
+    TEST_ASSERT_EQUAL_STRING("RTC", manager.rtcLabel());
+}
+
 void test_time_manager_init_rtc_keeps_detected_pcf8523_when_begin_fails() {
     seedPcf8523WithOldValidTime();
     I2cMock::setWriteFailure(Config::PCF8523_ADDR, Config::PCF8523_REG_CONTROL_3, true);
@@ -340,6 +408,9 @@ int main(int, char **) {
     RUN_TEST(test_time_manager_init_rtc_keeps_dirty_ds3231_visible_when_osf_set);
     RUN_TEST(test_time_manager_init_rtc_prefers_ds3231_before_pcf8523_fallback);
     RUN_TEST(test_time_manager_init_rtc_retries_weak_ds3231_candidate_as_pcf8523);
+    RUN_TEST(test_time_manager_init_rtc_respects_manual_pcf8523_mode);
+    RUN_TEST(test_time_manager_init_rtc_respects_manual_ds3231_mode);
+    RUN_TEST(test_time_manager_init_rtc_manual_ds3231_mode_does_not_fall_back_to_pcf8523);
     RUN_TEST(test_time_manager_init_rtc_keeps_detected_pcf8523_when_begin_fails);
     RUN_TEST(test_time_manager_init_rtc_keeps_detected_pcf8523_when_initial_read_fails);
     RUN_TEST(test_time_manager_poll_marks_detected_rtc_invalid_after_repeated_read_failures);

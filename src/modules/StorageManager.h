@@ -40,6 +40,7 @@ public:
                           const String &base_topic, const String &device_name, bool discovery,
                           bool anonymous);
     void saveMqttEnabled(bool enabled);
+    bool saveRtcMode(Config::RtcMode mode);
     bool saveDacAutoState(bool auto_mode, bool auto_armed);
 
     bool loadVocState(uint8_t *out, size_t len) const;

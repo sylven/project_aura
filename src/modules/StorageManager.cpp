@@ -311,6 +311,17 @@ void StorageManager::saveMqttEnabled(bool enabled) {
     }
 }
 
+bool StorageManager::saveRtcMode(Config::RtcMode mode) {
+    const Config::RtcMode previous = config_.rtc_mode;
+    config_.rtc_mode = mode;
+    if (!saveConfig(true)) {
+        config_.rtc_mode = previous;
+        LOGE("Storage", "failed to persist RTC mode");
+        return false;
+    }
+    return true;
+}
+
 bool StorageManager::saveDacAutoState(bool auto_mode, bool auto_armed) {
     const bool prev_mode = config_.dac_auto_mode;
     const bool prev_armed = config_.dac_auto_armed;
@@ -550,6 +561,9 @@ bool StorageManager::loadConfig() {
     if (!time.isNull()) {
         readValue(time, "ntp_enabled", loaded.ntp_enabled);
         readValue(time, "tz_idx", loaded.tz_index);
+        int rtc_mode_raw = static_cast<int>(Config::RtcMode::Auto);
+        readValue(time, "rtc_mode", rtc_mode_raw);
+        loaded.rtc_mode = Config::clampRtcMode(rtc_mode_raw);
     }
 
     ArduinoJson::JsonObject dac = root["dac"].as<ArduinoJson::JsonObject>();
@@ -641,6 +655,7 @@ bool StorageManager::saveConfigInternal() {
     ArduinoJson::JsonObject time = root["time"].to<ArduinoJson::JsonObject>();
     time["ntp_enabled"] = config_.ntp_enabled;
     time["tz_idx"] = config_.tz_index;
+    time["rtc_mode"] = static_cast<uint8_t>(config_.rtc_mode);
 
     ArduinoJson::JsonObject dac = root["dac"].to<ArduinoJson::JsonObject>();
     dac["auto_mode"] = config_.dac_auto_mode;

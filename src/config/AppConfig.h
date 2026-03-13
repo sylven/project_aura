@@ -73,6 +73,23 @@ namespace Config {
         return static_cast<Language>(value);
     }
 
+    enum class RtcMode : uint8_t {
+        Auto = 0,
+        Pcf8523 = 1,
+        Ds3231 = 2,
+    };
+
+    inline RtcMode clampRtcMode(int value) {
+        switch (value) {
+            case static_cast<int>(RtcMode::Pcf8523):
+                return RtcMode::Pcf8523;
+            case static_cast<int>(RtcMode::Ds3231):
+                return RtcMode::Ds3231;
+            default:
+                return RtcMode::Auto;
+        }
+    }
+
     constexpr uint8_t SEN66_ADDR = 0x6B;
     constexpr uint16_t SEN66_CMD_START = 0x0021;
     constexpr uint16_t SEN66_CMD_STOP = 0x0104;
@@ -450,6 +467,7 @@ namespace Config {
 
         bool ntp_enabled = true;
         int tz_index = -1;
+        RtcMode rtc_mode = RtcMode::Auto;
         bool dac_auto_mode = false;
         bool dac_auto_armed = false;
 
