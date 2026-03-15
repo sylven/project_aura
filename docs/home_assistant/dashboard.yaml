@@ -166,7 +166,7 @@ views:
             vertical: false
             features_position: bottom
           - type: tile
-            entity: button.project_aura_project_aura_restart
+            entity: button.project_aura_restart
             name: Restart
             icon: mdi:restart-alert
             vertical: false
