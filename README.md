@@ -39,12 +39,12 @@ This repository contains the firmware source code and configuration needed to fl
 - [Tests](#tests)
 - [Repo Layout](#repo-layout)
 
-## Video Demo
+## Video Review
 Click the image.
-[![Project Aura demo video](https://img.youtube.com/vi/TNsyDGNrN-w/maxresdefault.jpg)](https://www.youtube.com/watch?v=TNsyDGNrN-w)
+[![Project Aura demo video](https://img.youtube.com/vi/TNsyDGNrN-w/maxresdefault.jpg)](https://www.youtube.com/watch?v=1pzBqcmbWl8)
 
 Also watch the new Project Aura review:
-[Project Aura review on YouTube](https://www.youtube.com/watch?v=1pzBqcmbWl8)
+[Project Aura demo on YouTube](https://www.youtube.com/watch?v=TNsyDGNrN-w)
 
 ## Highlights
 - Professional telemetry: PM0.5/PM1/PM2.5/PM4/PM10, CO, CO2, VOC, NOx, temperature, humidity, absolute humidity (AH), pressure, HCHO.
