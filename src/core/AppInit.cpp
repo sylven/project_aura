@@ -207,6 +207,7 @@ bool AppInit::initLvglAndUi(Context &ctx, esp_panel::board::Board *board) {
         ctx.uiController.begin();
         // Keep startup diagnostics, but mute low-level runtime touch/I2C spam.
         esp_log_level_set("lcd_panel.io.i2c", ESP_LOG_NONE);
+        esp_log_level_set("Panel", ESP_LOG_NONE);
     }
     return lvgl_ready;
 }
