@@ -166,6 +166,7 @@ bool UiBootFlow::bootDiagHasErrors(UiController &owner, uint32_t now_ms) {
     }
     if (!owner.sensorManager.isOk() &&
         !BootDiagPolicy::sen66Pending(owner.sensorManager.isOk(),
+                                      owner.sensorManager.isBusy(),
                                       owner.sensorManager.retryAtMs(),
                                       now_ms)) {
         has_error = true;
@@ -190,6 +191,7 @@ void UiBootFlow::updateBootDiag(UiController &owner, uint32_t now_ms) {
     char error_lines[512] = {0};
     size_t error_len = 0;
     const bool sen66_pending = BootDiagPolicy::sen66Pending(owner.sensorManager.isOk(),
+                                                            owner.sensorManager.isBusy(),
                                                             owner.sensorManager.retryAtMs(),
                                                             now_ms);
 

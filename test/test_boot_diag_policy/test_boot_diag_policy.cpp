@@ -6,16 +6,21 @@ void setUp() {}
 void tearDown() {}
 
 void test_sen66_pending_during_retry_window() {
-    TEST_ASSERT_TRUE(BootDiagPolicy::sen66Pending(false, 5000, 3000));
+    TEST_ASSERT_TRUE(BootDiagPolicy::sen66Pending(false, false, 5000, 3000));
 }
 
 void test_sen66_pending_clears_after_deadline() {
-    TEST_ASSERT_FALSE(BootDiagPolicy::sen66Pending(false, 5000, 5000));
-    TEST_ASSERT_FALSE(BootDiagPolicy::sen66Pending(false, 5000, 6000));
+    TEST_ASSERT_FALSE(BootDiagPolicy::sen66Pending(false, false, 5000, 5000));
+    TEST_ASSERT_FALSE(BootDiagPolicy::sen66Pending(false, false, 5000, 6000));
 }
 
 void test_sen66_pending_is_false_when_sensor_ok() {
-    TEST_ASSERT_FALSE(BootDiagPolicy::sen66Pending(true, 5000, 3000));
+    TEST_ASSERT_FALSE(BootDiagPolicy::sen66Pending(true, true, 5000, 3000));
+}
+
+void test_sen66_pending_stays_true_while_sensor_busy() {
+    TEST_ASSERT_TRUE(BootDiagPolicy::sen66Pending(false, true, 5000, 5000));
+    TEST_ASSERT_TRUE(BootDiagPolicy::sen66Pending(false, true, 5000, 6000));
 }
 
 void test_auto_advance_blocks_while_sensor_pending() {
@@ -36,6 +41,7 @@ int main(int, char **) {
     RUN_TEST(test_sen66_pending_during_retry_window);
     RUN_TEST(test_sen66_pending_clears_after_deadline);
     RUN_TEST(test_sen66_pending_is_false_when_sensor_ok);
+    RUN_TEST(test_sen66_pending_stays_true_while_sensor_busy);
     RUN_TEST(test_auto_advance_blocks_while_sensor_pending);
     RUN_TEST(test_auto_advance_blocks_on_errors);
     RUN_TEST(test_auto_advance_runs_only_after_timeout_without_blocks);

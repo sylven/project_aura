@@ -1255,6 +1255,7 @@ void UiController::poll(uint32_t now) {
         pending_screen_id == 0 &&
         BootDiagPolicy::shouldAutoAdvance(boot_diag_has_error,
                                           BootDiagPolicy::sen66Pending(sensorManager.isOk(),
+                                                                       sensorManager.isBusy(),
                                                                        sensorManager.retryAtMs(),
                                                                        now),
                                           now - boot_diag_start_ms,
