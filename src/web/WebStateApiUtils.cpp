@@ -37,12 +37,17 @@ void fillJson(ArduinoJson::JsonObject root, const Payload &payload) {
     WebJsonUtils::jsonSetFloatOrNull(sensors, "pm4", data.pm4_valid, data.pm4);
     WebJsonUtils::jsonSetFloatOrNull(sensors, "pm10", data.pm10_valid, data.pm10);
     WebJsonUtils::jsonSetIntOrNull(sensors, "co2", data.co2_valid, data.co2);
-    WebJsonUtils::jsonSetIntOrNull(sensors, "voc", data.voc_valid, data.voc_index);
-    WebJsonUtils::jsonSetIntOrNull(sensors, "nox", data.nox_valid, data.nox_index);
+    WebJsonUtils::jsonSetIntOrNull(sensors, "voc",
+                                   !payload.gas_warmup && data.voc_valid,
+                                   data.voc_index);
+    WebJsonUtils::jsonSetIntOrNull(sensors, "nox",
+                                   !payload.gas_warmup && data.nox_valid,
+                                   data.nox_index);
     WebJsonUtils::jsonSetFloatOrNull(sensors, "hcho", data.hcho_valid, data.hcho);
     WebJsonUtils::jsonSetFloatOrNull(sensors, "co", data.co_valid && data.co_sensor_present, data.co_ppm);
     sensors["co_sensor_present"] = data.co_sensor_present;
     sensors["co_warmup"] = data.co_warmup;
+    sensors["gas_warmup"] = payload.gas_warmup;
 
     ArduinoJson::JsonObject derived = root["derived"].to<ArduinoJson::JsonObject>();
     const bool climate_valid = data.temp_valid && data.hum_valid;

@@ -2,6 +2,7 @@
 
 This folder contains a ready-to-use YAML configuration to visualize your Aura data.
 It uses only standard Home Assistant cards. No HACS or external dependencies required.
+The example view includes dedicated `CO2` and `AQI` gauge cards at the top.
 
 ![Dashboard Preview](../assets/preview.png)
 

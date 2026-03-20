@@ -104,6 +104,7 @@ private:
         INFO_VOC,
         INFO_NOX,
         INFO_HCHO,
+        INFO_AQI,
         INFO_CO2,
         INFO_RH,
         INFO_AH,

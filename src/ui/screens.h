@@ -636,6 +636,12 @@ typedef struct _objects_t {
     lv_obj_t *label_btn_hcho_range_3h;
     lv_obj_t *btn_hcho_range_24h;
     lv_obj_t *label_btn_hcho_range_24h;
+    lv_obj_t *label_aqi_text;
+    lv_obj_t *aqi_info_thresholds;
+    lv_obj_t *label_aqi_excellent;
+    lv_obj_t *label_aqi_acceptable;
+    lv_obj_t *label_aqi_uncomfortable;
+    lv_obj_t *label_aqi_poor;
     lv_obj_t *humidity_info_rh_ah;
     lv_obj_t *rh_info;
     lv_obj_t *label_rh_text;

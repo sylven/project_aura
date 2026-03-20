@@ -112,6 +112,7 @@ void handleStateData(WebHandlerContext &context, bool ota_busy) {
     ArduinoJson::JsonDocument doc;
     WebStateApiUtils::Payload payload{};
     payload.data = runtime.data;
+    payload.gas_warmup = runtime.gas_warmup;
     payload.uptime_s = uptime_s;
     payload.timestamp_ms = millis();
     payload.has_time_epoch = now_epoch > 0;

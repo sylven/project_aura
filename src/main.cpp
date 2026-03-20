@@ -279,6 +279,7 @@ void loop()
     fanControl.poll(now, &currentData, sensorManager.isWarmupActive());
     webRuntimeState.update(currentData, sensorManager.isWarmupActive(), fanControl);
     mqttRuntimeState.update(currentData,
+                            sensorManager.isWarmupActive(),
                             night_mode,
                             alert_blink_enabled,
                             backlightManager.isOn(),

@@ -87,9 +87,26 @@ void test_web_state_api_utils_fill_json_sets_nulls_when_values_are_unavailable()
     TEST_ASSERT_EQUAL_STRING("Aura-AP", doc["network"]["wifi_ssid"].as<const char *>());
 }
 
+void test_web_state_api_utils_hides_reactive_gas_metrics_during_warmup() {
+    WebStateApiUtils::Payload payload{};
+    payload.gas_warmup = true;
+    payload.data.voc_valid = true;
+    payload.data.voc_index = 175;
+    payload.data.nox_valid = true;
+    payload.data.nox_index = 42;
+
+    ArduinoJson::JsonDocument doc;
+    WebStateApiUtils::fillJson(doc.to<ArduinoJson::JsonObject>(), payload);
+
+    TEST_ASSERT_TRUE(doc["sensors"]["gas_warmup"].as<bool>());
+    TEST_ASSERT_TRUE(doc["sensors"]["voc"].isNull());
+    TEST_ASSERT_TRUE(doc["sensors"]["nox"].isNull());
+}
+
 int main(int, char **) {
     UNITY_BEGIN();
     RUN_TEST(test_web_state_api_utils_fill_json_populates_sensor_network_and_settings_fields);
     RUN_TEST(test_web_state_api_utils_fill_json_sets_nulls_when_values_are_unavailable);
+    RUN_TEST(test_web_state_api_utils_hides_reactive_gas_metrics_during_warmup);
     return UNITY_END();
 }

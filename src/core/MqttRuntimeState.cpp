@@ -11,12 +11,14 @@ MqttRuntimeState::MqttRuntimeState() {
 }
 
 void MqttRuntimeState::update(const SensorData &data,
+                              bool gas_warmup,
                               bool night_mode,
                               bool alert_blink,
                               bool backlight_on,
                               bool auto_night_enabled) {
     lock();
     snapshot_.data = data;
+    snapshot_.gas_warmup = gas_warmup;
     snapshot_.night_mode = night_mode;
     snapshot_.alert_blink = alert_blink;
     snapshot_.backlight_on = backlight_on;

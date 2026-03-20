@@ -111,6 +111,9 @@ void UiController::update_sensor_info_ui() {
             break;
         }
         case INFO_HCHO: {
+            set_visible(objects.label_hcho_text, true);
+            set_visible(objects.label_aqi_text, false);
+            set_visible(objects.aqi_info_thresholds, false);
             if (currentData.hcho_valid) {
                 char buf[16];
                 snprintf(buf, sizeof(buf), "%d", static_cast<int>(lroundf(currentData.hcho)));
@@ -132,6 +135,20 @@ void UiController::update_sensor_info_ui() {
                 should_refresh_active_graph(INFO_HCHO, hcho_graph_range_, hcho_graph_points())) {
                 update_hcho_info_graph();
             }
+            break;
+        }
+        case INFO_AQI: {
+            const AirQuality aq = getAirQuality(currentData);
+            char buf[16];
+            snprintf(buf, sizeof(buf), "%d", aq.score);
+            safe_label_set_text(objects.label_sensor_value, buf);
+            safe_label_set_text(objects.label_sensor_info_unit, UiText::UnitIndex());
+            set_dot_color(objects.dot_sensor_info, alert_color_for_mode(aq.color));
+            set_visible(objects.label_hcho_text, false);
+            set_visible(objects.hcho_info_thresholds, false);
+            set_visible(objects.hcho_info_graph, false);
+            set_visible(objects.label_aqi_text, true);
+            set_visible(objects.aqi_info_thresholds, true);
             break;
         }
         case INFO_CO2: {
@@ -546,7 +563,25 @@ void UiController::restore_sensor_info_selection() {
                 unit = UiText::UnitPpb();
             }
             safe_label_set_text(objects.label_sensor_info_unit, unit);
+            set_visible(objects.label_hcho_text, true);
+            set_visible(objects.label_aqi_text, false);
+            set_visible(objects.aqi_info_thresholds, false);
             set_hcho_info_mode(hcho_graph_mode_);
+            update_sensor_info_ui();
+            break;
+        }
+        case INFO_AQI: {
+            hide_all_sensor_info_containers();
+            set_visible(objects.hcho_info, true);
+            if (objects.label_sensor_info_title) {
+                safe_label_set_text(objects.label_sensor_info_title, UiText::LabelAqi());
+            }
+            safe_label_set_text(objects.label_sensor_info_unit, UiText::UnitIndex());
+            set_visible(objects.label_hcho_text, false);
+            set_visible(objects.hcho_info_thresholds, false);
+            set_visible(objects.hcho_info_graph, false);
+            set_visible(objects.label_aqi_text, true);
+            set_visible(objects.aqi_info_thresholds, true);
             update_sensor_info_ui();
             break;
         }
@@ -744,8 +779,11 @@ void UiController::hide_all_sensor_info_containers() {
     set_visible(objects.nox_info_thresholds, false);
     set_visible(objects.nox_info_graph, false);
     set_visible(objects.hcho_info, false);
+    set_visible(objects.label_hcho_text, false);
     set_visible(objects.hcho_info_thresholds, false);
     set_visible(objects.hcho_info_graph, false);
+    set_visible(objects.label_aqi_text, false);
+    set_visible(objects.aqi_info_thresholds, false);
     set_visible(objects.co_info, false);
     set_visible(objects.co_info_thresholds, false);
     set_visible(objects.co_info_graph, false);

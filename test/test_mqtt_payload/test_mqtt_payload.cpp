@@ -1,6 +1,7 @@
 #include <unity.h>
 #include <string.h>
 
+#include "config/AppConfig.h"
 #include "config/AppData.h"
 #include "modules/MqttPayloadBuilder.h"
 
@@ -33,7 +34,7 @@ void test_state_payload_includes_pm05_pm1_pm4_and_co_null_without_sensor() {
     data.pm4_valid = true;
     data.pm4 = 12.3f;
 
-    String payload = MqttPayloadBuilder::buildStatePayload(data, true, false, true);
+    String payload = MqttPayloadBuilder::buildStatePayload(data, false, true, false, true);
 
     assert_contains(payload, "\"pm05\":321.4");
     assert_contains(payload, "\"pm1\":8.7");
@@ -54,7 +55,7 @@ void test_state_payload_includes_co_when_sensor_present_and_valid() {
     data.pm1_valid = false;
     data.pm1 = 0.0f;
 
-    String payload = MqttPayloadBuilder::buildStatePayload(data, false, true, false);
+    String payload = MqttPayloadBuilder::buildStatePayload(data, false, false, true, false);
 
     assert_contains(payload, "\"co\":1.5");
     assert_contains(payload, "\"pm05\":null");
@@ -77,11 +78,50 @@ void test_state_payload_buffer_builder_matches_string_payload() {
     data.pressure = 1009.4f;
 
     char payload[512] = {};
-    size_t written = MqttPayloadBuilder::buildStatePayload(payload, sizeof(payload), data, true, true, false);
+    size_t written = MqttPayloadBuilder::buildStatePayload(
+        payload, sizeof(payload), data, false, true, true, false);
     TEST_ASSERT_GREATER_THAN_UINT32(0, static_cast<uint32_t>(written));
 
-    String string_payload = MqttPayloadBuilder::buildStatePayload(data, true, true, false);
+    String string_payload = MqttPayloadBuilder::buildStatePayload(data, false, true, true, false);
     TEST_ASSERT_EQUAL_STRING(string_payload.c_str(), payload);
+}
+
+void test_state_payload_includes_aqi_when_computable() {
+    SensorData data{};
+    data.co2_valid = true;
+    data.co2 = static_cast<int>(Config::AQ_CO2_YELLOW_MAX_PPM);
+
+    String payload = MqttPayloadBuilder::buildStatePayload(data, false, false, false, false);
+
+    assert_contains(payload, "\"aqi\":50");
+}
+
+void test_state_payload_excludes_aqi_when_only_warmup_gas_metrics_exist() {
+    SensorData data{};
+    data.voc_valid = true;
+    data.voc_index = Config::AQ_VOC_ORANGE_MAX_INDEX;
+    data.nox_valid = true;
+    data.nox_index = Config::AQ_NOX_YELLOW_MAX_INDEX;
+    data.hcho_valid = true;
+    data.hcho = 0.0f;
+
+    String payload = MqttPayloadBuilder::buildStatePayload(data, true, false, false, false);
+
+    assert_contains(payload, "\"aqi\":null");
+    assert_contains(payload, "\"voc_index\":null");
+    assert_contains(payload, "\"nox_index\":null");
+}
+
+void test_state_payload_keeps_aqi_available_during_warmup_when_pm_is_ready() {
+    SensorData data{};
+    data.hcho_valid = true;
+    data.hcho = 0.0f;
+    data.pm25_valid = true;
+    data.pm25 = Config::AQ_PM25_YELLOW_MAX_UGM3;
+
+    String payload = MqttPayloadBuilder::buildStatePayload(data, true, false, false, false);
+
+    assert_contains(payload, "\"aqi\":50");
 }
 
 void test_discovery_sensor_payload_contains_pm05_template_and_topics() {
@@ -117,6 +157,9 @@ int main(int, char **) {
     RUN_TEST(test_state_payload_includes_pm05_pm1_pm4_and_co_null_without_sensor);
     RUN_TEST(test_state_payload_includes_co_when_sensor_present_and_valid);
     RUN_TEST(test_state_payload_buffer_builder_matches_string_payload);
+    RUN_TEST(test_state_payload_includes_aqi_when_computable);
+    RUN_TEST(test_state_payload_excludes_aqi_when_only_warmup_gas_metrics_exist);
+    RUN_TEST(test_state_payload_keeps_aqi_available_during_warmup_when_pm_is_ready);
     RUN_TEST(test_discovery_sensor_payload_contains_pm05_template_and_topics);
     return UNITY_END();
 }

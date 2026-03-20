@@ -26,11 +26,13 @@ String buildDiscoverySensorPayload(const String &device_id,
 size_t buildStatePayload(char *out,
                          size_t out_size,
                          const SensorData &data,
+                         bool gas_warmup,
                          bool night_mode,
                          bool alert_blink,
                          bool backlight_on);
 
 String buildStatePayload(const SensorData &data,
+                         bool gas_warmup,
                          bool night_mode,
                          bool alert_blink,
                          bool backlight_on);

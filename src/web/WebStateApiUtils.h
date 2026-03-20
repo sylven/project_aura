@@ -18,6 +18,7 @@ namespace WebStateApiUtils {
 
 struct Payload {
     SensorData data{};
+    bool gas_warmup = false;
     uint32_t uptime_s = 0;
     uint32_t timestamp_ms = 0;
     bool has_time_epoch = false;

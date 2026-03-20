@@ -592,6 +592,8 @@ void MqttManager::publishDiscovery() {
                            "", "measurement", "{{ value_json.absolute_humidity }}", "mdi:water");
     publishDiscoverySensor("co2", "CO2", "ppm",
                            "carbon_dioxide", "measurement", "{{ value_json.co2 }}", "");
+    publishDiscoverySensor("aqi", "AQI", "",
+                           "", "measurement", "{{ value_json.aqi }}", "mdi:gauge");
     publishDiscoverySensor("co", "CO", "ppm",
                            "carbon_monoxide", "measurement", "{{ value_json.co }}", "mdi:molecule-co");
     publishDiscoverySensor("voc_index", "VOC Index", "index",
@@ -641,7 +643,11 @@ void MqttManager::publishState(const MqttRuntimeSnapshot &runtime) {
     }
     const size_t payload_len = MqttPayloadBuilder::buildStatePayload(
         mqtt_state_payload_buf_, sizeof(mqtt_state_payload_buf_),
-        runtime.data, runtime.night_mode, runtime.alert_blink, runtime.backlight_on);
+        runtime.data,
+        runtime.gas_warmup,
+        runtime.night_mode,
+        runtime.alert_blink,
+        runtime.backlight_on);
     if (payload_len == 0) {
         Logger::log(Logger::Warn, "MQTT", "state payload build failed");
         return;

@@ -15,6 +15,7 @@
 
 struct MqttRuntimeSnapshot {
     SensorData data;
+    bool gas_warmup = false;
     bool night_mode = false;
     bool alert_blink = false;
     bool backlight_on = false;
@@ -36,6 +37,7 @@ public:
     MqttRuntimeState();
 
     void update(const SensorData &data,
+                bool gas_warmup,
                 bool night_mode,
                 bool alert_blink,
                 bool backlight_on,

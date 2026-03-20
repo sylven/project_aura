@@ -25,6 +25,7 @@
 #include "config/AppConfig.h"
 #include "core/BootState.h"
 #include "core/AppVersion.h"
+#include "core/AirQualityEngine.h"
 #include "core/Logger.h"
 #include "core/SafeRestart.h"
 #include "web/WebRuntime.h"
@@ -75,63 +76,6 @@ enum class SettingsLogSeverity : uint8_t {
     Warn,
     Error,
 };
-
-float map_float_clamped(float value, float in_min, float in_max, float out_min, float out_max) {
-    if (in_max <= in_min) return out_min;
-    float v = value;
-    if (v < in_min) v = in_min;
-    if (v > in_max) v = in_max;
-    return out_min + (out_max - out_min) * (v - in_min) / (in_max - in_min);
-}
-
-int score_from_thresholds(float value, float min_val, float t_good, float t_mod, float t_poor) {
-    if (value <= t_good) {
-        return static_cast<int>(lroundf(map_float_clamped(value, min_val, t_good, 0.0f, 25.0f)));
-    }
-    if (value <= t_mod) {
-        return static_cast<int>(lroundf(map_float_clamped(value, t_good, t_mod, 25.0f, 50.0f)));
-    }
-    if (value <= t_poor) {
-        return static_cast<int>(lroundf(map_float_clamped(value, t_mod, t_poor, 50.0f, 75.0f)));
-    }
-    float cap = t_poor * 1.5f;
-    float score = map_float_clamped(value, t_poor, cap, 75.0f, 100.0f);
-    if (score < 75.0f) score = 75.0f;
-    if (score > 100.0f) score = 100.0f;
-    return static_cast<int>(lroundf(score));
-}
-
-int score_from_voc(float value) {
-    return score_from_thresholds(value,
-                                 0.0f,
-                                 AQ_VOC_GREEN_MAX_INDEX,
-                                 AQ_VOC_YELLOW_MAX_INDEX,
-                                 AQ_VOC_ORANGE_MAX_INDEX);
-}
-
-int score_from_co(float co_ppm) {
-    if (co_ppm <= 0.0f) {
-        return 0;
-    }
-    if (co_ppm < AQ_CO_GREEN_MAX_PPM) {
-        return static_cast<int>(lroundf(map_float_clamped(co_ppm, 0.0f, AQ_CO_GREEN_MAX_PPM, 0.0f, 25.0f)));
-    }
-    if (co_ppm <= AQ_CO_YELLOW_MAX_PPM) {
-        return static_cast<int>(lroundf(map_float_clamped(co_ppm,
-                                                          AQ_CO_GREEN_MAX_PPM,
-                                                          AQ_CO_YELLOW_MAX_PPM,
-                                                          80.0f,
-                                                          90.0f)));
-    }
-    if (co_ppm <= AQ_CO_ORANGE_MAX_PPM) {
-        return static_cast<int>(lroundf(map_float_clamped(co_ppm,
-                                                          AQ_CO_YELLOW_MAX_PPM,
-                                                          AQ_CO_ORANGE_MAX_PPM,
-                                                          90.0f,
-                                                          100.0f)));
-    }
-    return 100;
-}
 
 bool should_wake_backlight_on_alert(const SensorData &data, bool gas_warmup) {
     StatusMessages::StatusMessageResult result = StatusMessages::build_status_messages(data, gas_warmup);
@@ -1508,79 +1452,38 @@ lv_color_t UiController::getHCHOColor(float hcho_ppb, bool valid) {
 }
 
 AirQuality UiController::getAirQuality(const SensorData &data) {
-    AirQuality aq;
-    bool gas_warmup = sensorManager.isWarmupActive();
-    bool has_valid = false;
-    int max_score = 0;
+    AirQuality aq{};
+    const AirQualityEngine::Result result =
+        AirQualityEngine::evaluate(data, sensorManager.isWarmupActive());
 
-    if (data.co_sensor_present &&
-        data.co_valid &&
-        isfinite(data.co_ppm) &&
-        data.co_ppm >= 0.0f) {
-        int score = score_from_co(data.co_ppm);
-        max_score = max(max_score, score);
-        has_valid = true;
-    }
-
-    if (data.co2_valid && data.co2 > 0) {
-        int score = score_from_thresholds(static_cast<float>(data.co2),
-                                          400.0f,
-                                          AQ_CO2_GREEN_MAX_PPM,
-                                          AQ_CO2_YELLOW_MAX_PPM,
-                                          AQ_CO2_ORANGE_MAX_PPM);
-        max_score = max(max_score, score);
-        has_valid = true;
-    }
-
-    if (data.pm25_valid && isfinite(data.pm25) && data.pm25 >= 0.0f) {
-        int score = score_from_thresholds(data.pm25,
-                                          0.0f,
-                                          AQ_PM25_GREEN_MAX_UGM3,
-                                          AQ_PM25_YELLOW_MAX_UGM3,
-                                          AQ_PM25_ORANGE_MAX_UGM3);
-        max_score = max(max_score, score);
-        has_valid = true;
-    }
-
-    if (data.hcho_valid && isfinite(data.hcho) && data.hcho >= 0.0f) {
-        int score = score_from_thresholds(data.hcho,
-                                          0.0f,
-                                          AQ_HCHO_GREEN_MAX_PPB,
-                                          AQ_HCHO_YELLOW_MAX_PPB,
-                                          AQ_HCHO_ORANGE_MAX_PPB);
-        max_score = max(max_score, score);
-        has_valid = true;
-    }
-
-    if (!gas_warmup && data.nox_valid && data.nox_index >= 0) {
-        int score = score_from_thresholds(static_cast<float>(data.nox_index),
-                                          1.0f,
-                                          AQ_NOX_GREEN_MAX_INDEX,
-                                          AQ_NOX_YELLOW_MAX_INDEX,
-                                          AQ_NOX_ORANGE_MAX_INDEX);
-        max_score = max(max_score, score);
-        has_valid = true;
-    }
-
-    if (!gas_warmup && data.voc_valid && data.voc_index >= 0) {
-        int score = score_from_voc(static_cast<float>(data.voc_index));
-        max_score = max(max_score, score);
-        has_valid = true;
-    }
-
-    if (!has_valid) {
+    if (!result.valid) {
         aq.status = UiText::StatusInitializing();
         aq.score = 0;
         aq.color = color_blue();
         return aq;
     }
 
-    aq.score = max_score;
-
-    if (aq.score <= 25)      { aq.status = UiText::QualityExcellent(); aq.color = color_green(); }
-    else if (aq.score <= 50) { aq.status = UiText::QualityGood();      aq.color = color_green(); }
-    else if (aq.score <= 75) { aq.status = UiText::QualityModerate();  aq.color = color_yellow(); }
-    else                     { aq.status = UiText::QualityPoor();     aq.color = color_red(); }
+    aq.score = result.score;
+    switch (result.band) {
+        case AirQualityEngine::Band::Excellent:
+            aq.status = UiText::QualityExcellent();
+            aq.color = color_green();
+            break;
+        case AirQualityEngine::Band::Good:
+            aq.status = UiText::QualityGood();
+            aq.color = color_green();
+            break;
+        case AirQualityEngine::Band::Moderate:
+            aq.status = UiText::QualityModerate();
+            aq.color = color_yellow();
+            break;
+        case AirQualityEngine::Band::Poor:
+        case AirQualityEngine::Band::Invalid:
+        default:
+            aq.status = UiText::QualityPoor();
+            aq.color = color_red();
+            break;
+    }
 
     return aq;
 }

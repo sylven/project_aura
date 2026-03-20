@@ -4,27 +4,41 @@ views:
     path: kitchen
     icon: mdi:air-filter
     cards:
-      - type: gauge
-        entity: sensor.project_aura_project_aura_co2
-        name: CO2
-        min: 400
-        max: 2000
-        needle: true
-        severity:
-          green: 900
-          yellow: 1200
-          red: 1500
+      - type: grid
+        columns: 2
+        square: false
+        cards:
+          - type: gauge
+            entity: sensor.aura_aqi
+            name: AQI
+            min: 0
+            max: 100
+            needle: true
+            severity:
+              green: 25
+              yellow: 50
+              red: 75
+          - type: gauge
+            entity: sensor.project_aura_co2
+            name: CO2
+            min: 400
+            max: 2000
+            needle: true
+            severity:
+              green: 900
+              yellow: 1200
+              red: 1500
       - type: grid
         columns: 2
         square: false
         cards:
           - type: tile
-            entity: sensor.project_aura_project_aura_temperature
+            entity: sensor.project_aura_temperature
             name: Temperature
             vertical: false
             features_position: bottom
           - type: tile
-            entity: sensor.project_aura_project_aura_humidity
+            entity: sensor.project_aura_humidity
             name: Humidity
             vertical: false
             features_position: bottom
@@ -34,27 +48,27 @@ views:
             vertical: false
             features_position: bottom
           - type: tile
-            entity: sensor.project_aura_project_aura_dew_point
+            entity: sensor.project_aura_dew_point
             name: Dew Point
             vertical: false
             features_position: bottom
           - type: tile
-            entity: sensor.project_aura_project_aura_pressure
+            entity: sensor.project_aura_pressure
             name: Pressure
             vertical: false
             features_position: bottom
           - type: tile
-            entity: sensor.project_aura_project_aura_hcho
+            entity: sensor.project_aura_hcho
             name: HCHO
             vertical: false
             features_position: bottom
           - type: tile
-            entity: sensor.project_aura_project_aura_pressure_delta_3h
+            entity: sensor.project_aura_pressure_delta_3h
             name: Pressure Delta 3h
             vertical: false
             features_position: bottom
           - type: tile
-            entity: sensor.project_aura_project_aura_pressure_delta_24h
+            entity: sensor.project_aura_pressure_delta_24h
             name: Pressure Delta 24h
             vertical: false
             features_position: bottom
@@ -63,12 +77,12 @@ views:
         square: false
         cards:
           - type: tile
-            entity: sensor.project_aura_project_aura_voc_index
+            entity: sensor.project_aura_voc_index
             name: VOC Index
             vertical: false
             features_position: bottom
           - type: tile
-            entity: sensor.project_aura_project_aura_nox_index
+            entity: sensor.project_aura_nox_index
             name: NOx Index
             vertical: false
             features_position: bottom
@@ -107,7 +121,7 @@ views:
         period: hour
         type: statistics-graph
         entities:
-          - sensor.project_aura_project_aura_co2
+          - sensor.project_aura_co2
         min_y_axis: 400
         max_y_axis: 3000
         stat_types:
@@ -120,7 +134,7 @@ views:
         period: hour
         type: statistics-graph
         entities:
-          - sensor.project_aura_project_aura_temperature
+          - sensor.project_aura_temperature
         stat_types:
           - min
           - max
@@ -133,7 +147,7 @@ views:
         period: hour
         type: statistics-graph
         entities:
-          - sensor.project_aura_project_aura_humidity
+          - sensor.project_aura_humidity
         stat_types:
           - min
           - max
@@ -148,19 +162,19 @@ views:
         square: false
         cards:
           - type: tile
-            entity: switch.project_aura_project_aura_night_mode
+            entity: switch.project_aura_night_mode
             name: Night Mode
             icon: mdi:weather-night
             vertical: false
             features_position: bottom
           - type: tile
-            entity: switch.project_aura_project_aura_backlight
+            entity: switch.project_aura_backlight
             name: Backlight
             icon: mdi:television
             vertical: false
             features_position: bottom
           - type: tile
-            entity: switch.project_aura_project_aura_alert_blink
+            entity: switch.project_aura_alert_blink
             name: Alert Blink
             icon: mdi:alarm-light
             vertical: false

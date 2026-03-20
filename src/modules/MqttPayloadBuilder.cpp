@@ -11,6 +11,7 @@
 #include <stdarg.h>
 
 #include "core/MathUtils.h"
+#include "core/AirQualityEngine.h"
 #include "config/AppConfig.h"
 
 namespace MqttPayloadBuilder {
@@ -172,11 +173,18 @@ String buildDiscoverySensorPayload(const String &device_id,
 }
 
 String buildStatePayload(const SensorData &data,
+                         bool gas_warmup,
                          bool night_mode,
                          bool alert_blink,
                          bool backlight_on) {
     char payload[Config::MQTT_BUFFER_SIZE] = {};
-    if (buildStatePayload(payload, sizeof(payload), data, night_mode, alert_blink, backlight_on) == 0) {
+    if (buildStatePayload(payload,
+                          sizeof(payload),
+                          data,
+                          gas_warmup,
+                          night_mode,
+                          alert_blink,
+                          backlight_on) == 0) {
         return String();
     }
     return String(payload);
@@ -185,6 +193,7 @@ String buildStatePayload(const SensorData &data,
 size_t buildStatePayload(char *out,
                          size_t out_size,
                          const SensorData &data,
+                         bool gas_warmup,
                          bool night_mode,
                          bool alert_blink,
                          bool backlight_on) {
@@ -238,21 +247,25 @@ size_t buildStatePayload(char *out,
         ah_gm3 = MathUtils::compute_absolute_humidity_gm3(data.temperature, data.humidity);
         ah_valid = isfinite(ah_gm3);
     }
+    const AirQualityEngine::Result aqi = AirQualityEngine::evaluate(data, gas_warmup);
 
     if (!add_float("temp", data.temp_valid, data.temperature, 1) ||
         !add_float("humidity", data.hum_valid, data.humidity, 1) ||
         !add_float("dew_point", dew_valid, dew_c, 1) ||
         !add_float("absolute_humidity", ah_valid, ah_gm3, 1) ||
-        !add_int("co2", data.co2_valid, data.co2)) {
+        !add_int("co2", data.co2_valid, data.co2) ||
+        !add_int("aqi", aqi.valid, aqi.score)) {
         return 0;
     }
     const bool co_valid = data.co_sensor_present &&
                           data.co_valid &&
                           isfinite(data.co_ppm) &&
                           data.co_ppm >= 0.0f;
+    const bool voc_publish_valid = !gas_warmup && data.voc_valid;
+    const bool nox_publish_valid = !gas_warmup && data.nox_valid;
     if (!add_float("co", co_valid, data.co_ppm, 1) ||
-        !add_int("voc_index", data.voc_valid, data.voc_index) ||
-        !add_int("nox_index", data.nox_valid, data.nox_index) ||
+        !add_int("voc_index", voc_publish_valid, data.voc_index) ||
+        !add_int("nox_index", nox_publish_valid, data.nox_index) ||
         !add_float("hcho", data.hcho_valid, data.hcho, 1) ||
         !add_float("pm05", data.pm05_valid, data.pm05, 1) ||
         !add_float("pm1", data.pm1_valid, data.pm1, 1) ||

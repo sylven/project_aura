@@ -95,6 +95,11 @@ void UiController::update_sensor_info_texts() {
     if (objects.label_hcho_acceptable) safe_label_set_text_static(objects.label_hcho_acceptable, UiText::InfoHchoAcceptable());
     if (objects.label_hcho_uncomfortable) safe_label_set_text_static(objects.label_hcho_uncomfortable, UiText::InfoHchoUncomfortable());
     if (objects.label_hcho_poor) safe_label_set_text_static(objects.label_hcho_poor, UiText::InfoHchoPoor());
+    if (objects.label_aqi_text) safe_label_set_text_static(objects.label_aqi_text, UiText::InfoAqiText());
+    if (objects.label_aqi_excellent) safe_label_set_text_static(objects.label_aqi_excellent, UiText::InfoAqiExcellent());
+    if (objects.label_aqi_acceptable) safe_label_set_text_static(objects.label_aqi_acceptable, UiText::InfoAqiAcceptable());
+    if (objects.label_aqi_uncomfortable) safe_label_set_text_static(objects.label_aqi_uncomfortable, UiText::InfoAqiUncomfortable());
+    if (objects.label_aqi_poor) safe_label_set_text_static(objects.label_aqi_poor, UiText::InfoAqiPoor());
     if (objects.label_co2_text) safe_label_set_text_static(objects.label_co2_text, UiText::InfoCo2Text());
     if (objects.label_co2_excellent) safe_label_set_text_static(objects.label_co2_excellent, UiText::InfoCo2Excellent());
     if (objects.label_co2_acceptable) safe_label_set_text_static(objects.label_co2_acceptable, UiText::InfoCo2Acceptable());
