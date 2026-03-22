@@ -21,6 +21,11 @@ namespace {
 constexpr const char kApiErrorOtaBusyJson[] =
     "{\"success\":false,\"error\":\"OTA upload in progress\","
     "\"error_code\":\"OTA_BUSY\",\"ota_busy\":true}";
+constexpr const char kApiPrepareOkJson[] =
+    "{\"success\":true,\"message\":\"Device ready for firmware upload\"}";
+constexpr const char kApiPrepareUnavailableJson[] =
+    "{\"success\":false,\"error\":\"OTA prepare unavailable\","
+    "\"error_code\":\"OTA_PREPARE_UNAVAILABLE\"}";
 constexpr size_t kOtaAbortDrainMaxBytes = 32UL * 1024UL;
 constexpr uint32_t kOtaAbortDrainTimeoutMs = 1500;
 
@@ -111,6 +116,27 @@ void ota_log_abort_summary(WebRequest &server, const WebOtaSnapshot &ota) {
 
 namespace WebOtaHandlers {
 
+void handlePrepare(Runtime &runtime, bool ota_busy) {
+    if (!runtime.context.server) {
+        return;
+    }
+
+    WebRequest &server = *runtime.context.server;
+    if (ota_busy) {
+        send_ota_busy_json(server);
+        return;
+    }
+    if (!runtime.arm_preflight_ui) {
+        WebResponseUtils::sendNoStoreHeaders(server);
+        server.send(503, "application/json", kApiPrepareUnavailableJson);
+        return;
+    }
+
+    runtime.arm_preflight_ui();
+    WebResponseUtils::sendNoStoreHeaders(server);
+    server.send(200, "application/json", kApiPrepareOkJson);
+}
+
 void handleUpload(Runtime &runtime, bool ota_busy) {
     if (!runtime.context.server) {
         return;
@@ -123,6 +149,9 @@ void handleUpload(Runtime &runtime, bool ota_busy) {
         if (ota_busy) {
             LOGW("OTA", "reject upload start while OTA is busy");
             return;
+        }
+        if (runtime.cancel_preflight_ui) {
+            runtime.cancel_preflight_ui();
         }
         const uint32_t start_ms = millis();
         runtime.ota_state.reset();
@@ -335,6 +364,9 @@ void handleUpdate(Runtime &runtime, bool ota_busy) {
         LOGI("OTA", "response sent, deferred reboot in %u ms",
              static_cast<unsigned>(runtime.deferred_restart_delay_ms));
         runtime.restart_controller.schedule(millis(), runtime.deferred_restart_delay_ms);
+    }
+    if (runtime.cancel_preflight_ui) {
+        runtime.cancel_preflight_ui();
     }
     cleanup_after_update_response(runtime, result.success);
 }

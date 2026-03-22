@@ -22,6 +22,7 @@ namespace {
 
 constexpr uint32_t kDeferredRestartDelayMs = 1500;
 constexpr uint32_t kHttpStreamSlowWriteWarnMs = 200;
+constexpr uint32_t kOtaPreflightUiLeaseMs = 15000;
 constexpr const char kApiErrorOtaBusyJson[] =
     "{\"success\":false,\"error\":\"OTA upload in progress\","
     "\"error_code\":\"OTA_BUSY\",\"ota_busy\":true}";
@@ -34,6 +35,8 @@ WebStreamState g_web_stream_state;
 std::atomic<bool> g_restart_in_progress{false};
 bool g_ota_wifi_ps_saved = false;
 wifi_ps_type_t g_ota_wifi_ps_prev = WIFI_PS_NONE;
+bool g_ota_preflight_ui_active = false;
+uint32_t g_ota_preflight_ui_due_ms = 0;
 
 uint32_t web_stream_now_ms(void *) {
     return millis();
@@ -101,6 +104,17 @@ void ota_set_ui_screen(bool active) {
         return;
     }
     g_ctx->web_ui_bridge->requestFirmwareUpdateScreen(active);
+}
+
+void ota_arm_preflight_ui() {
+    ota_set_ui_screen(true);
+    g_ota_preflight_ui_active = true;
+    g_ota_preflight_ui_due_ms = millis() + kOtaPreflightUiLeaseMs;
+}
+
+void ota_cancel_preflight_ui() {
+    g_ota_preflight_ui_active = false;
+    g_ota_preflight_ui_due_ms = 0;
 }
 
 void ota_restore_wifi_power_save();
@@ -175,6 +189,7 @@ void init(WebHandlerContext *context) {
     g_web_stream_state.reset();
     g_restart_controller.reset();
     g_restart_in_progress.store(false, std::memory_order_release);
+    ota_cancel_preflight_ui();
     ota_reset_state();
 }
 
@@ -217,6 +232,13 @@ void pollDeferred() {
     }
 
     const uint32_t now_ms = millis();
+    if (g_ota_preflight_ui_active &&
+        static_cast<int32_t>(now_ms - g_ota_preflight_ui_due_ms) >= 0 &&
+        !isOtaBusy()) {
+        ota_set_ui_screen(false);
+        ota_cancel_preflight_ui();
+    }
+
     const WebDeferredActionsDue due = g_deferred_actions.pollDue(now_ms);
 
     if (due.wifi_start_sta && g_ctx->wifi_start_sta) {
@@ -261,6 +283,8 @@ WebOtaHandlers::Runtime otaRuntime(WebHandlerContext &context) {
         ota_upload_timeout_ms,
         ota_disable_wifi_power_save_for_upload,
         ota_restore_wifi_power_save,
+        ota_arm_preflight_ui,
+        ota_cancel_preflight_ui,
         ota_set_ui_screen,
         ota_set_error,
     };

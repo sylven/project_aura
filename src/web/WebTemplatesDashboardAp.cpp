@@ -1814,6 +1814,29 @@ async function postJson(url, payload) {
   return json;
 }
 
+async function prepareOtaUpload() {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+  try {
+    const r = await fetch('/api/ota/prepare', {
+      method: 'POST',
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+    let json = null;
+    try { json = await r.json(); } catch (_) {}
+    if (!r.ok) throw new Error((json && json.error) || ('HTTP ' + r.status));
+    return json;
+  } catch (err) {
+    if (err && err.name === 'AbortError') {
+      throw new Error('Device did not respond to OTA prepare request.');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 function stopOtaRecoveryWatcher() {
   otaRecoveryActive = false;
   if (otaRecoveryTimer) {
@@ -2269,7 +2292,7 @@ function initSettingsUI() {
 // OTA upload
 // ─────────────────────────────────────────────
 function initOtaUI() {
-  document.getElementById('otaUploadBtn').addEventListener('click', () => {
+  document.getElementById('otaUploadBtn').addEventListener('click', async () => {
     if (otaUploadInFlight || otaRestartPending) return;
     const fileInput = document.getElementById('otaFile');
     const file = fileInput.files && fileInput.files[0];
@@ -2312,8 +2335,20 @@ function initOtaUI() {
     stopOtaRecoveryWatcher();
     otaReconnectGraceUntilMs = 0;
 
-    otaUploadInFlight = true;
     uploadBtn.disabled = true;
+    statusEl.textContent = 'Preparing device for upload...';
+    statusEl.className = 'ota-status';
+    try {
+      await prepareOtaUpload();
+    } catch (err) {
+      uploadBtn.disabled = false;
+      statusEl.textContent =
+        (err && err.message) ? err.message : 'Failed to prepare device for upload.';
+      statusEl.className = 'ota-status err';
+      return;
+    }
+
+    otaUploadInFlight = true;
     statusEl.textContent = 'Uploading firmware…';
     statusEl.className = 'ota-status';
     progressEl.style.width = '0%';

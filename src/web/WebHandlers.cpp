@@ -240,6 +240,13 @@ void ota_handle_upload() {
     });
 }
 
+void ota_handle_prepare() {
+    with_ota_busy([](WebHandlerContext &context, bool ota_busy) {
+        WebOtaHandlers::Runtime runtime = WebHandlersSupport::otaRuntime(context);
+        WebOtaHandlers::handlePrepare(runtime, ota_busy);
+    });
+}
+
 void ota_handle_update() {
     with_ota_busy([](WebHandlerContext &context, bool ota_busy) {
         WebOtaHandlers::Runtime runtime = WebHandlersSupport::otaRuntime(context);

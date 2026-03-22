@@ -23,10 +23,13 @@ struct Runtime {
     uint32_t (*upload_timeout_ms)(size_t image_size_bytes) = nullptr;
     void (*disable_wifi_power_save_for_upload)() = nullptr;
     void (*restore_wifi_power_save)() = nullptr;
+    void (*arm_preflight_ui)() = nullptr;
+    void (*cancel_preflight_ui)() = nullptr;
     void (*set_ui_screen)(bool active) = nullptr;
     void (*set_error)(const String &error) = nullptr;
 };
 
+void handlePrepare(Runtime &runtime, bool ota_busy);
 void handleUpload(Runtime &runtime, bool ota_busy);
 void handleUpdate(Runtime &runtime, bool ota_busy);
 
