@@ -118,8 +118,13 @@ void handleStateData(WebHandlerContext &context, bool ota_busy) {
     payload.has_time_epoch = now_epoch > 0;
     payload.time_epoch_s = static_cast<int64_t>(now_epoch);
     payload.network = WebRuntimeCapture::captureNetworkSnapshot(context);
-    payload.settings = WebUiBridgeAdapters::captureSettingsSnapshot(
-        context.web_ui_bridge ? context.web_ui_bridge->snapshot() : WebUiBridge::Snapshot{});
+    const WebUiBridge::Snapshot ui_snapshot =
+        context.web_ui_bridge ? context.web_ui_bridge->snapshot() : WebUiBridge::Snapshot{};
+    payload.settings = WebUiBridgeAdapters::captureSettingsSnapshot(ui_snapshot);
+    payload.ntp_active = ui_snapshot.ntp_active;
+    payload.ntp_syncing = ui_snapshot.ntp_syncing;
+    payload.ntp_error = ui_snapshot.ntp_error;
+    payload.ntp_last_sync_ms = ui_snapshot.ntp_last_sync_ms;
     payload.dac_available = runtime.fan.available;
     payload.firmware = AppVersion::fullVersion();
     payload.build_date = __DATE__;

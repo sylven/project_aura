@@ -80,6 +80,8 @@ public:
 
     bool webSetNightMode(bool enabled);
     bool webSetBacklight(bool enabled);
+    bool webSetNtpEnabled(bool enabled);
+    bool webSetNtpServer(const String &server);
     bool webSetUnitsC(bool units_c);
     bool webSetOffsets(float temp_offset_c, float hum_offset_pct);
     void webSetFirmwareUpdateScreen(bool active);

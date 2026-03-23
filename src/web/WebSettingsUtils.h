@@ -19,10 +19,12 @@ struct SettingsSnapshot {
     bool night_mode = false;
     bool night_mode_locked = false;
     bool backlight_on = false;
+    bool ntp_enabled = true;
     bool units_c = true;
     bool time_format_24h = true;
     float temp_offset = 0.0f;
     float hum_offset = 0.0f;
+    String ntp_server;
     String display_name;
 };
 
@@ -31,12 +33,16 @@ struct SettingsUpdate {
     bool night_mode = false;
     bool has_backlight = false;
     bool backlight_on = false;
+    bool has_ntp_enabled = false;
+    bool ntp_enabled = true;
     bool has_units_c = false;
     bool units_c = true;
     bool has_temp_offset = false;
     float temp_offset = 0.0f;
     bool has_hum_offset = false;
     float hum_offset = 0.0f;
+    bool has_ntp_server = false;
+    String ntp_server;
     bool has_display_name = false;
     String display_name;
     bool restart_requested = false;

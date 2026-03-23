@@ -466,6 +466,7 @@ namespace Config {
         int auto_night_end_minute = 0;
 
         bool ntp_enabled = true;
+        String ntp_server;
         int tz_index = -1;
         bool time_format_24h = true;
         RtcMode rtc_mode = RtcMode::Auto;

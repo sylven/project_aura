@@ -414,6 +414,7 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
     .text-field-lbl { font-size: 12px; color: #9ca3af; }
     .text-input { width: 100%; background: #111827; border: 1px solid #374151; border-radius: 8px; padding: 8px 12px; color: #f9fafb; font-size: 14px; }
     .text-input:focus { outline: none; border-color: #0891b2; }
+    .field-hint { font-size: 11px; color: #6b7280; line-height: 1.4; }
     .save-btn {
       margin-top: 14px;
       padding: 9px 18px;
@@ -443,7 +444,9 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
 
     /* ── System tab ── */
     .system-grid { display: grid; grid-template-columns: 1fr; gap: 12px; align-items: start; }
+    .system-col { display: flex; flex-direction: column; gap: 12px; }
     @media (min-width: 768px) { .system-grid { gap: 16px; } }
+    @media (min-width: 768px) { .system-col { gap: 16px; } }
     @media (min-width: 1024px) { .system-grid { grid-template-columns: 1fr 1fr; } }
     .info-rows { display: flex; flex-direction: column; gap: 0; }
     .info-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid rgba(55,65,81,.4); font-size: 13px; }
@@ -677,17 +680,42 @@ const char kDashboardPageTemplateAp[] PROGMEM = R"HTML_DASH_AP(
           <a class="btn link-btn" href="/dashboard" id="networkActionBtn">Open Dashboard</a>
         </div>
       </div>
-      <div class="sg">
-        <div class="sg-title">Firmware OTA</div>
-        <div class="sg-rows">
-          <div id="otaPrecheck" class="ota-precheck warn">Waiting for device state before OTA.</div>
-          <div class="text-field-row">
-            <label class="text-field-lbl" for="otaFile">Firmware file (.bin)</label>
-            <input class="file-input" type="file" id="otaFile" accept=".bin,application/octet-stream" />
+      <div class="system-col">
+        <div class="sg">
+          <div class="sg-title">Firmware OTA</div>
+          <div class="sg-rows">
+            <div id="otaPrecheck" class="ota-precheck warn">Waiting for device state before OTA.</div>
+            <div class="text-field-row">
+              <label class="text-field-lbl" for="otaFile">Firmware file (.bin)</label>
+              <input class="file-input" type="file" id="otaFile" accept=".bin,application/octet-stream" />
+            </div>
+            <button class="btn" type="button" id="otaUploadBtn">Upload firmware</button>
+            <div class="progress-track"><div class="progress-fill" id="otaProgress"></div></div>
+            <div class="ota-status" id="otaStatus">No upload in progress.</div>
           </div>
-          <button class="btn" type="button" id="otaUploadBtn">Upload firmware</button>
-          <div class="progress-track"><div class="progress-fill" id="otaProgress"></div></div>
-          <div class="ota-status" id="otaStatus">No upload in progress.</div>
+        </div>
+        <div class="sg">
+          <div class="sg-title">Time Sync</div>
+          <div class="sg-rows">
+            <div class="toggle-row" id="ntpEnabledToggle">
+              <span class="toggle-label">Auto Sync (NTP)</span>
+              <div class="toggle-sw on" id="ntpEnabledSw"><div class="toggle-knob"></div></div>
+            </div>
+            <div class="text-field-row">
+              <label class="text-field-lbl" for="ntpServerInput">NTP Server</label>
+              <input class="text-input"
+                     type="text"
+                     id="ntpServerInput"
+                     maxlength="64"
+                     placeholder="pool.ntp.org or 192.168.1.1" />
+              <div class="field-hint">Leave empty to use default public servers.</div>
+            </div>
+            <div class="info-rows">
+              <div class="info-row"><span class="info-key">Status</span><span class="info-val" id="ntp-status">--</span></div>
+              <div class="info-row"><span class="info-key">Last Sync</span><span class="info-val" id="ntp-last-sync">--</span></div>
+            </div>
+            <button class="save-btn idle" type="button" id="saveTimeSyncBtn">No changes</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1496,6 +1524,7 @@ function renderSystemMeta(payload) {
     setInfoValue('cfg-mqtt-status', 'Disabled');
   }
   updateNetworkActionButton(network);
+  renderTimeSyncMeta(payload);
   updateLastSyncUi();
   updateOtaPrecheck(network);
 
@@ -1538,6 +1567,8 @@ let otaReconnectGraceUntilMs = 0;
 const settings = {
   nightMode: false, nightModeLocked: false,
   backlight: true,
+  ntpEnabled: true,
+  ntpServer: '',
   tempUnit: 'c',
   timeFormat24h: true,
   tempOffset: 0, humOffset: 0,
@@ -1547,6 +1578,9 @@ const savedSettings = Object.assign({}, settings);
 let settingsSaving = false;
 let settingsSaveStatus = 'idle'; // idle|dirty|saving|saved|error
 let nameDirty = false;
+let timeSyncDirty = false;
+let timeSyncSaving = false;
+let timeSyncSaveStatus = 'idle'; // idle|dirty|saving|saved|error
 const toggleRequestState = {
   night_mode: { inFlight: false, queued: null },
   backlight_on: { inFlight: false, queued: null },
@@ -1613,6 +1647,39 @@ function updateLastSyncUi() {
   setInfoValue('cfg-last-sync',
                formatSyncAge(ageS),
                ageS === null ? '' : (ageS <= 20 ? 'ok' : (ageS <= OTA_STALE_STATE_THRESHOLD_S ? '' : 'err')));
+}
+
+function renderTimeSyncMeta(payload) {
+  const system = (payload && payload.system) || {};
+  const uptimeS = payload && isNum(payload.uptime_s) ? Number(payload.uptime_s) : null;
+  const status = typeof system.ntp_status === 'string' ? system.ntp_status : 'off';
+  const lastSyncMs = isNum(system.ntp_last_sync_ms) ? Number(system.ntp_last_sync_ms) : null;
+
+  let statusText = 'Off';
+  let statusClass = '';
+  if (status === 'syncing') {
+    statusText = 'Syncing';
+  } else if (status === 'ok') {
+    statusText = 'OK';
+    statusClass = 'ok';
+  } else if (status === 'error') {
+    statusText = 'Error';
+    statusClass = 'err';
+  }
+  setInfoValue('ntp-status', statusText, statusClass);
+
+  let lastSyncText = 'Never';
+  let lastSyncClass = '';
+  if (status === 'syncing') {
+    lastSyncText = 'In progress';
+  } else if (lastSyncMs !== null && uptimeS !== null) {
+    const ageS = Math.max(0, Math.floor(uptimeS - (lastSyncMs / 1000)));
+    lastSyncText = formatSyncAge(ageS);
+    lastSyncClass = ageS <= 3600 ? 'ok' : '';
+  } else if (status === 'error') {
+    lastSyncClass = 'err';
+  }
+  setInfoValue('ntp-last-sync', lastSyncText, lastSyncClass);
 }
 
 function updateNetworkActionButton(network) {
@@ -2089,6 +2156,10 @@ function applySettingsToUI(apiSettings, force, toggleOverrideKey) {
       shouldApplyToggleFromApi('backlight_on', toggleOverrideKey)) {
     settings.backlight = apiSettings.backlight_on;
   }
+  if (!(timeSyncDirty && !force)) {
+    if (typeof apiSettings.ntp_enabled === 'boolean') settings.ntpEnabled = apiSettings.ntp_enabled;
+    if (typeof apiSettings.ntp_server === 'string') settings.ntpServer = apiSettings.ntp_server;
+  }
   if (typeof apiSettings.units_c === 'boolean') settings.tempUnit = apiSettings.units_c ? 'c' : 'f';
   if (typeof apiSettings.time_format_24h === 'boolean') settings.timeFormat24h = apiSettings.time_format_24h;
   if (isNum(apiSettings.temp_offset)) settings.tempOffset = Number(apiSettings.temp_offset.toFixed(1));
@@ -2097,6 +2168,7 @@ function applySettingsToUI(apiSettings, force, toggleOverrideKey) {
 
   updateToggleDom('nightModeSw', settings.nightMode);
   updateToggleDom('backlightSw', settings.backlight);
+  updateToggleDom('ntpEnabledSw', settings.ntpEnabled);
   const nightRow = document.getElementById('nightModeToggle');
   if (nightRow) nightRow.classList.toggle('disabled', settings.nightModeLocked);
   updateSegmentDom('tempUnitSeg', 'data-unit', settings.tempUnit);
@@ -2116,6 +2188,16 @@ function applySettingsToUI(apiSettings, force, toggleOverrideKey) {
     updateNameBtn('idle');
   }
 
+  const ntpInput = document.getElementById('ntpServerInput');
+  if (ntpInput && (!timeSyncDirty || force)) {
+    ntpInput.value = settings.ntpServer || '';
+    timeSyncDirty = false;
+    if (timeSyncSaveStatus !== 'saving') {
+      timeSyncSaveStatus = 'idle';
+      updateTimeSyncSaveBtn();
+    }
+  }
+
   renderHeaderDeviceName();
 
   Object.assign(savedSettings, settings);
@@ -2123,6 +2205,27 @@ function applySettingsToUI(apiSettings, force, toggleOverrideKey) {
     settingsSaveStatus = 'idle';
     updateSaveBtn();
   }
+}
+
+function markTimeSyncDirty() {
+  timeSyncDirty = true;
+  timeSyncSaveStatus = 'dirty';
+  updateTimeSyncSaveBtn();
+}
+
+function updateTimeSyncSaveBtn() {
+  const btn = document.getElementById('saveTimeSyncBtn');
+  if (!btn) return;
+  btn.className = 'save-btn ' + timeSyncSaveStatus;
+  const labels = {
+    idle: 'No changes',
+    dirty: 'Save Time Sync',
+    saving: 'Saving...',
+    saved: 'Saved',
+    error: 'Save Failed'
+  };
+  btn.textContent = labels[timeSyncSaveStatus] || 'Save';
+  btn.disabled = timeSyncSaveStatus === 'idle' || timeSyncSaveStatus === 'saving';
 }
 
 function updateNameBtn(status) {
@@ -2215,6 +2318,37 @@ async function saveName() {
   }
 }
 
+async function saveTimeSync() {
+  if (timeSyncSaving) return;
+  const ntpInput = document.getElementById('ntpServerInput');
+  if (!ntpInput) return;
+
+  settings.ntpServer = ntpInput.value.trim();
+  timeSyncSaving = true;
+  timeSyncSaveStatus = 'saving';
+  updateTimeSyncSaveBtn();
+  try {
+    const result = await postJson('/api/settings', {
+      ntp_enabled: settings.ntpEnabled,
+      ntp_server: settings.ntpServer,
+    });
+    if (result && result.settings) applySettingsToUI(result.settings, true);
+    timeSyncDirty = false;
+    timeSyncSaveStatus = 'saved';
+    updateTimeSyncSaveBtn();
+    setTimeout(() => {
+      if (!timeSyncDirty && timeSyncSaveStatus === 'saved') {
+        timeSyncSaveStatus = 'idle';
+        updateTimeSyncSaveBtn();
+      }
+    }, 2500);
+  } catch (_) {
+    timeSyncSaveStatus = 'error';
+    updateTimeSyncSaveBtn();
+  }
+  timeSyncSaving = false;
+}
+
 function initSettingsUI() {
   // Night mode toggle
   const nightRow = document.getElementById('nightModeToggle');
@@ -2285,6 +2419,27 @@ function initSettingsUI() {
   });
   document.getElementById('saveNameBtn').addEventListener('click', () => {
     if (nameDirty) saveName().catch(() => {});
+  });
+}
+
+function initTimeSyncUI() {
+  const ntpRow = document.getElementById('ntpEnabledToggle');
+  if (ntpRow) ntpRow.addEventListener('click', () => {
+    settings.ntpEnabled = !settings.ntpEnabled;
+    updateToggleDom('ntpEnabledSw', settings.ntpEnabled);
+    markTimeSyncDirty();
+  });
+
+  const ntpInput = document.getElementById('ntpServerInput');
+  if (ntpInput) ntpInput.addEventListener('input', () => {
+    settings.ntpServer = ntpInput.value;
+    markTimeSyncDirty();
+  });
+
+  document.getElementById('saveTimeSyncBtn').addEventListener('click', () => {
+    if (timeSyncSaveStatus === 'dirty' || timeSyncSaveStatus === 'error') {
+      saveTimeSync().catch(() => {});
+    }
   });
 }
 
@@ -2614,6 +2769,7 @@ document.getElementById('openThemeBtn').addEventListener('click', () => { window
 document.getElementById('openDacBtn').addEventListener('click', () => { window.location.href = '/dac'; });
 
 initSettingsUI();
+initTimeSyncUI();
 initOtaUI();
 updateHeaderClock();
 setInterval(updateHeaderClock, 1000);

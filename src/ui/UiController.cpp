@@ -11,6 +11,7 @@
 #include "ui/UiScreenFlow.h"
 #include "ui/UiText.h"
 
+#include <ctype.h>
 #include <math.h>
 #include <string.h>
 #include <time.h>
@@ -68,6 +69,30 @@ constexpr size_t UI_DIAG_LOG_RECENT_MAX = 32;
 constexpr size_t UI_DIAG_LOG_TEXT_CAPACITY = 2048;
 constexpr size_t UI_DIAG_LOG_LINE_CAPACITY = 128;
 constexpr size_t UI_DIAG_LOG_MESSAGE_MAX_CHARS = 54;
+
+String trim_copy(const String &value) {
+    const char *begin = value.c_str();
+    if (!begin) {
+        return String();
+    }
+
+    const char *end = begin;
+    while (*end != '\0') {
+        ++end;
+    }
+    while (begin < end && isspace(static_cast<unsigned char>(*begin))) {
+        ++begin;
+    }
+    while (end > begin && isspace(static_cast<unsigned char>(*(end - 1)))) {
+        --end;
+    }
+
+    String out;
+    while (begin < end) {
+        out += *begin++;
+    }
+    return out;
+}
 
 Logger::RecentEntry g_diag_log_snapshot[UI_DIAG_LOG_RECENT_MAX];
 
@@ -352,10 +377,16 @@ WebUiBridge::Snapshot UiController::buildWebUiSnapshot() const {
     snapshot.night_mode = night_mode;
     snapshot.night_mode_locked = nightModeManager.isAutoEnabled();
     snapshot.backlight_on = backlightManager.isOn();
+    snapshot.ntp_enabled = timeManager.isNtpEnabledPref();
+    snapshot.ntp_active = timeManager.isNtpEnabled();
+    snapshot.ntp_syncing = timeManager.isNtpSyncing();
+    snapshot.ntp_error = timeManager.isNtpError();
     snapshot.units_c = temp_units_c;
     snapshot.time_format_24h = time_format_24h_;
     snapshot.temp_offset = temp_offset;
     snapshot.hum_offset = hum_offset;
+    snapshot.ntp_last_sync_ms = timeManager.lastNtpSyncMs();
+    snapshot.ntp_server = timeManager.ntpServerPref();
     snapshot.display_name = storage.config().web_display_name;
     snapshot.mqtt_screen_open = current_screen_id == SCREEN_ID_PAGE_MQTT ||
                                 pending_screen_id == SCREEN_ID_PAGE_MQTT;
@@ -458,11 +489,16 @@ WebUiBridge::ApplyResult UiController::applyWebUiSettingsBridge(
     const bool previous_units_c = controller->webUnitsC();
     const float previous_temp_offset = controller->webTempOffset();
     const float previous_hum_offset = controller->webHumOffset();
+    const bool previous_ntp_enabled = controller->timeManager.isNtpEnabledPref();
+    const String previous_ntp_server =
+        update.has_ntp_server ? controller->timeManager.ntpServerPref() : String();
     const String previous_display_name =
         update.has_display_name ? controller->storage.config().web_display_name : String();
 
     bool applied_backlight = false;
     bool applied_night_mode = false;
+    bool applied_ntp_enabled = false;
+    bool applied_ntp_server = false;
     bool applied_units = false;
     bool applied_offsets = false;
     bool applied_display_name = false;
@@ -486,6 +522,16 @@ WebUiBridge::ApplyResult UiController::applyWebUiSettingsBridge(
         }
         if (applied_night_mode && controller->webNightModeEnabled() != previous_night_mode) {
             if (!controller->webSetNightMode(previous_night_mode)) {
+                rollback_failed = true;
+            }
+        }
+        if (applied_ntp_enabled && controller->timeManager.isNtpEnabledPref() != previous_ntp_enabled) {
+            if (!controller->webSetNtpEnabled(previous_ntp_enabled)) {
+                rollback_failed = true;
+            }
+        }
+        if (applied_ntp_server && controller->timeManager.ntpServerPref() != previous_ntp_server) {
+            if (!controller->webSetNtpServer(previous_ntp_server)) {
                 rollback_failed = true;
             }
         }
@@ -522,6 +568,27 @@ WebUiBridge::ApplyResult UiController::applyWebUiSettingsBridge(
         }
         return finalize(false, status_code, message);
     };
+
+    if (update.has_ntp_enabled && !update.ntp_enabled) {
+        if (!controller->webSetNtpEnabled(false)) {
+            return fail(500, "Failed to persist NTP setting");
+        }
+        applied_ntp_enabled = true;
+    }
+
+    if (update.has_ntp_server) {
+        if (!controller->webSetNtpServer(update.ntp_server)) {
+            return fail(500, "Failed to persist NTP server");
+        }
+        applied_ntp_server = true;
+    }
+
+    if (update.has_ntp_enabled && update.ntp_enabled) {
+        if (!controller->webSetNtpEnabled(true)) {
+            return fail(500, "Failed to persist NTP setting");
+        }
+        applied_ntp_enabled = true;
+    }
 
     if (update.has_units_c) {
         if (!controller->webSetUnitsC(update.units_c)) {
@@ -876,6 +943,17 @@ bool UiController::webSetBacklight(bool enabled) {
         mqttRuntimeState.requestPublish();
     }
     return backlightManager.isOn() == enabled;
+}
+
+bool UiController::webSetNtpEnabled(bool enabled) {
+    timeManager.setNtpEnabledPref(enabled);
+    return timeManager.isNtpEnabledPref() == enabled;
+}
+
+bool UiController::webSetNtpServer(const String &server) {
+    const String normalized = trim_copy(server);
+    timeManager.setNtpServerPref(normalized);
+    return timeManager.ntpServerPref() == normalized;
 }
 
 bool UiController::webSetUnitsC(bool units_c) {

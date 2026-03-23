@@ -25,6 +25,10 @@ struct Payload {
     int64_t time_epoch_s = 0;
     WebNetworkUtils::Snapshot network{};
     WebSettingsUtils::SettingsSnapshot settings{};
+    bool ntp_active = false;
+    bool ntp_syncing = false;
+    bool ntp_error = false;
+    uint32_t ntp_last_sync_ms = 0;
     bool dac_available = false;
     String firmware;
     String build_date;

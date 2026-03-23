@@ -9,17 +9,19 @@
 namespace WebUiBridgeAdapters {
 
 WebSettingsUtils::SettingsSnapshot captureSettingsSnapshot(const WebUiBridge::Snapshot &snapshot) {
-    return {
-        snapshot.available,
-        snapshot.night_mode,
-        snapshot.night_mode_locked,
-        snapshot.backlight_on,
-        snapshot.units_c,
-        snapshot.time_format_24h,
-        snapshot.temp_offset,
-        snapshot.hum_offset,
-        snapshot.display_name,
-    };
+    WebSettingsUtils::SettingsSnapshot result{};
+    result.available = snapshot.available;
+    result.night_mode = snapshot.night_mode;
+    result.night_mode_locked = snapshot.night_mode_locked;
+    result.backlight_on = snapshot.backlight_on;
+    result.ntp_enabled = snapshot.ntp_enabled;
+    result.units_c = snapshot.units_c;
+    result.time_format_24h = snapshot.time_format_24h;
+    result.temp_offset = snapshot.temp_offset;
+    result.hum_offset = snapshot.hum_offset;
+    result.ntp_server = snapshot.ntp_server;
+    result.display_name = snapshot.display_name;
+    return result;
 }
 
 WebUiBridge::SettingsUpdate toUiSettingsUpdate(const WebSettingsUtils::SettingsUpdate &update) {
@@ -28,12 +30,16 @@ WebUiBridge::SettingsUpdate toUiSettingsUpdate(const WebSettingsUtils::SettingsU
     ui_update.night_mode = update.night_mode;
     ui_update.has_backlight = update.has_backlight;
     ui_update.backlight_on = update.backlight_on;
+    ui_update.has_ntp_enabled = update.has_ntp_enabled;
+    ui_update.ntp_enabled = update.ntp_enabled;
     ui_update.has_units_c = update.has_units_c;
     ui_update.units_c = update.units_c;
     ui_update.has_temp_offset = update.has_temp_offset;
     ui_update.temp_offset = update.temp_offset;
     ui_update.has_hum_offset = update.has_hum_offset;
     ui_update.hum_offset = update.hum_offset;
+    ui_update.has_ntp_server = update.has_ntp_server;
+    ui_update.ntp_server = update.ntp_server;
     ui_update.has_display_name = update.has_display_name;
     ui_update.display_name = update.display_name;
     ui_update.restart_requested = update.restart_requested;

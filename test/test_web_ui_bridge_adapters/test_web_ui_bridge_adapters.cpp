@@ -11,10 +11,12 @@ void test_web_ui_bridge_adapters_capture_settings_snapshot_copies_fields() {
     snapshot.night_mode = true;
     snapshot.night_mode_locked = true;
     snapshot.backlight_on = false;
+    snapshot.ntp_enabled = false;
     snapshot.units_c = false;
     snapshot.time_format_24h = false;
     snapshot.temp_offset = 1.5f;
     snapshot.hum_offset = -2.0f;
+    snapshot.ntp_server = "router.local";
     snapshot.display_name = "Aura";
 
     const WebSettingsUtils::SettingsSnapshot result =
@@ -24,10 +26,12 @@ void test_web_ui_bridge_adapters_capture_settings_snapshot_copies_fields() {
     TEST_ASSERT_TRUE(result.night_mode);
     TEST_ASSERT_TRUE(result.night_mode_locked);
     TEST_ASSERT_FALSE(result.backlight_on);
+    TEST_ASSERT_FALSE(result.ntp_enabled);
     TEST_ASSERT_FALSE(result.units_c);
     TEST_ASSERT_FALSE(result.time_format_24h);
     TEST_ASSERT_EQUAL_FLOAT(1.5f, result.temp_offset);
     TEST_ASSERT_EQUAL_FLOAT(-2.0f, result.hum_offset);
+    TEST_ASSERT_EQUAL_STRING("router.local", result.ntp_server.c_str());
     TEST_ASSERT_EQUAL_STRING("Aura", result.display_name.c_str());
 }
 
@@ -37,12 +41,16 @@ void test_web_ui_bridge_adapters_to_ui_settings_update_copies_flags_and_values()
     update.night_mode = true;
     update.has_backlight = true;
     update.backlight_on = false;
+    update.has_ntp_enabled = true;
+    update.ntp_enabled = false;
     update.has_units_c = true;
     update.units_c = false;
     update.has_temp_offset = true;
     update.temp_offset = 2.25f;
     update.has_hum_offset = true;
     update.hum_offset = -1.25f;
+    update.has_ntp_server = true;
+    update.ntp_server = "time.local";
     update.has_display_name = true;
     update.display_name = "Aura";
     update.restart_requested = true;
@@ -52,12 +60,16 @@ void test_web_ui_bridge_adapters_to_ui_settings_update_copies_flags_and_values()
     TEST_ASSERT_TRUE(result.night_mode);
     TEST_ASSERT_TRUE(result.has_backlight);
     TEST_ASSERT_FALSE(result.backlight_on);
+    TEST_ASSERT_TRUE(result.has_ntp_enabled);
+    TEST_ASSERT_FALSE(result.ntp_enabled);
     TEST_ASSERT_TRUE(result.has_units_c);
     TEST_ASSERT_FALSE(result.units_c);
     TEST_ASSERT_TRUE(result.has_temp_offset);
     TEST_ASSERT_EQUAL_FLOAT(2.25f, result.temp_offset);
     TEST_ASSERT_TRUE(result.has_hum_offset);
     TEST_ASSERT_EQUAL_FLOAT(-1.25f, result.hum_offset);
+    TEST_ASSERT_TRUE(result.has_ntp_server);
+    TEST_ASSERT_EQUAL_STRING("time.local", result.ntp_server.c_str());
     TEST_ASSERT_TRUE(result.has_display_name);
     TEST_ASSERT_EQUAL_STRING("Aura", result.display_name.c_str());
     TEST_ASSERT_TRUE(result.restart_requested);

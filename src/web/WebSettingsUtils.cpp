@@ -14,6 +14,8 @@ namespace WebSettingsUtils {
 
 namespace {
 
+constexpr size_t kNtpServerMaxLen = 64;
+
 String trim_whitespace(const String &value) {
     const char *begin = value.c_str();
     if (!begin) {
@@ -51,10 +53,12 @@ void fill_unavailable(ArduinoJson::JsonObject settings) {
     settings["night_mode"] = nullptr;
     settings["night_mode_locked"] = nullptr;
     settings["backlight_on"] = nullptr;
+    settings["ntp_enabled"] = nullptr;
     settings["units_c"] = nullptr;
     settings["time_format_24h"] = nullptr;
     settings["temp_offset"] = nullptr;
     settings["hum_offset"] = nullptr;
+    settings["ntp_server"] = nullptr;
     settings["display_name"] = nullptr;
 }
 
@@ -62,10 +66,12 @@ void fill_from_snapshot(ArduinoJson::JsonObject settings, const SettingsSnapshot
     settings["night_mode"] = snapshot.night_mode;
     settings["night_mode_locked"] = snapshot.night_mode_locked;
     settings["backlight_on"] = snapshot.backlight_on;
+    settings["ntp_enabled"] = snapshot.ntp_enabled;
     settings["units_c"] = snapshot.units_c;
     settings["time_format_24h"] = snapshot.time_format_24h;
     settings["temp_offset"] = snapshot.temp_offset;
     settings["hum_offset"] = snapshot.hum_offset;
+    settings["ntp_server"] = snapshot.ntp_server;
     settings["display_name"] = snapshot.display_name;
 }
 
@@ -73,11 +79,27 @@ void fill_from_config(ArduinoJson::JsonObject settings, const Config::StoredConf
     settings["night_mode"] = cfg.night_mode;
     settings["night_mode_locked"] = cfg.auto_night_enabled;
     settings["backlight_on"] = nullptr;
+    settings["ntp_enabled"] = cfg.ntp_enabled;
     settings["units_c"] = cfg.units_c;
     settings["time_format_24h"] = cfg.time_format_24h;
     settings["temp_offset"] = cfg.temp_offset;
     settings["hum_offset"] = cfg.hum_offset;
+    settings["ntp_server"] = cfg.ntp_server;
     settings["display_name"] = cfg.web_display_name;
+}
+
+bool has_inner_whitespace(const String &value) {
+    const char *ptr = value.c_str();
+    if (!ptr) {
+        return false;
+    }
+    while (*ptr != '\0') {
+        if (isspace(static_cast<unsigned char>(*ptr))) {
+            return true;
+        }
+        ++ptr;
+    }
+    return false;
 }
 
 } // namespace
@@ -111,6 +133,15 @@ ParseResult parseSettingsUpdate(ArduinoJson::JsonVariantConst root,
         }
         update.has_backlight = true;
         update.backlight_on = backlight_var.as<bool>();
+    }
+
+    const ArduinoJson::JsonVariantConst ntp_enabled_var = root["ntp_enabled"];
+    if (!ntp_enabled_var.isNull()) {
+        if (!ntp_enabled_var.is<bool>()) {
+            return fail_result(400, "ntp_enabled must be bool");
+        }
+        update.has_ntp_enabled = true;
+        update.ntp_enabled = ntp_enabled_var.as<bool>();
     }
 
     const ArduinoJson::JsonVariantConst units_c_var = root["units_c"];
@@ -156,6 +187,22 @@ ParseResult parseSettingsUpdate(ArduinoJson::JsonVariantConst root,
             return fail_result(400, "display_name contains invalid characters");
         }
         update.has_display_name = true;
+    }
+
+    const ArduinoJson::JsonVariantConst ntp_server_var = root["ntp_server"];
+    if (!ntp_server_var.isNull()) {
+        if (!ntp_server_var.is<const char *>()) {
+            return fail_result(400, "ntp_server must be string");
+        }
+        update.ntp_server = trim_whitespace(ntp_server_var.as<String>());
+        if (update.ntp_server.length() > kNtpServerMaxLen) {
+            return fail_result(400, "ntp_server is too long");
+        }
+        if (WebTextUtils::hasControlChars(update.ntp_server) ||
+            has_inner_whitespace(update.ntp_server)) {
+            return fail_result(400, "ntp_server contains invalid characters");
+        }
+        update.has_ntp_server = true;
     }
 
     const ArduinoJson::JsonVariantConst restart_var = root["restart"];

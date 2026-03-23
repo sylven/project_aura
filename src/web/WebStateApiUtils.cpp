@@ -79,6 +79,22 @@ void fillJson(ArduinoJson::JsonObject root, const Payload &payload) {
     system["build_time"] = payload.build_time;
     system["uptime"] = WebApiUtils::formatUptimeHuman(payload.uptime_s);
     system["dac_available"] = payload.dac_available;
+    const char *ntp_status = "off";
+    if (payload.ntp_active) {
+        if (payload.ntp_syncing) {
+            ntp_status = "syncing";
+        } else if (!payload.ntp_error && payload.ntp_last_sync_ms != 0) {
+            ntp_status = "ok";
+        } else {
+            ntp_status = "error";
+        }
+    }
+    system["ntp_status"] = ntp_status;
+    if (payload.ntp_last_sync_ms != 0) {
+        system["ntp_last_sync_ms"] = payload.ntp_last_sync_ms;
+    } else {
+        system["ntp_last_sync_ms"] = nullptr;
+    }
 
     ArduinoJson::JsonObject settings = root["settings"].to<ArduinoJson::JsonObject>();
     WebSettingsUtils::fillSettingsJson(settings, &payload.settings, nullptr);

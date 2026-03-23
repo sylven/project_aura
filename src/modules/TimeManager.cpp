@@ -6,6 +6,7 @@
 
 #include "modules/TimeManager.h"
 
+#include <ctype.h>
 #include <limits>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,6 +20,30 @@
 #endif
 
 namespace {
+
+String trim_copy(const String &value) {
+    const char *begin = value.c_str();
+    if (!begin) {
+        return String();
+    }
+
+    const char *end = begin;
+    while (*end != '\0') {
+        ++end;
+    }
+    while (begin < end && isspace(static_cast<unsigned char>(*begin))) {
+        ++begin;
+    }
+    while (end > begin && isspace(static_cast<unsigned char>(*(end - 1)))) {
+        --end;
+    }
+
+    String out;
+    while (begin < end) {
+        out += *begin++;
+    }
+    return out;
+}
 
 time_t nowEpoch() {
 #ifdef UNIT_TEST
@@ -136,6 +161,7 @@ void TimeManager::begin(StorageManager &storage) {
     storage_ = &storage;
     const auto &cfg = storage.config();
     ntp_enabled_pref_ = cfg.ntp_enabled;
+    ntp_server_pref_ = trim_copy(cfg.ntp_server);
     ntp_enabled_ = ntp_enabled_pref_;
     tz_index_ = cfg.tz_index;
     rtc_mode_ = Config::clampRtcMode(static_cast<int>(cfg.rtc_mode));
@@ -259,15 +285,53 @@ bool TimeManager::setNtpEnabledPref(bool enabled) {
     if (enabled == ntp_enabled_pref_) {
         return false;
     }
+    const bool previous = ntp_enabled_pref_;
     ntp_enabled_pref_ = enabled;
     if (storage_) {
         storage_->config().ntp_enabled = ntp_enabled_pref_;
         if (!storage_->saveConfig(true)) {
-            storage_->requestSave();
             LOGE("Time", "failed to persist NTP preference");
+            storage_->config().ntp_enabled = previous;
+            ntp_enabled_pref_ = previous;
+            return false;
         }
     }
     return syncNtpWithWifi();
+}
+
+bool TimeManager::setNtpServerPref(const String &server) {
+    String next = trim_copy(server);
+    if (next == ntp_server_pref_) {
+        return false;
+    }
+
+    const String previous = ntp_server_pref_;
+    ntp_server_pref_ = next;
+    if (storage_) {
+        storage_->config().ntp_server = ntp_server_pref_;
+        if (!storage_->saveConfig(true)) {
+            LOGE("Time", "failed to persist NTP server");
+            storage_->config().ntp_server = previous;
+            ntp_server_pref_ = previous;
+            return false;
+        }
+    }
+
+    bool state_changed = false;
+    if (ntp_syncing_) {
+        LOGI("Time", "restarting NTP sync after server change");
+        state_changed = true;
+    }
+    stopNtpService();
+    ntp_syncing_ = false;
+    ntp_err_ = false;
+    ntp_sync_start_ms_ = 0;
+    ntp_last_attempt_ms_ = 0;
+
+    if (ntp_enabled_ && wifi_connected_ && requestNtpSync()) {
+        state_changed = true;
+    }
+    return state_changed;
 }
 
 TimeManager::PollResult TimeManager::poll(uint32_t now_ms) {
@@ -528,9 +592,17 @@ bool TimeManager::requestNtpSync() {
     const TimeZoneEntry &tz = getTimezone();
     char posix_tz[32] = { 0 };
     buildTimezonePosix(tz, posix_tz, sizeof(posix_tz));
-    LOGI("Time", "NTP sync start (tz=%s, wifi=ON)", tz.name ? tz.name : "unknown");
+    const bool use_custom_server = ntp_server_pref_.length() > 0;
+    LOGI("Time",
+         "NTP sync start (tz=%s, server=%s, wifi=ON)",
+         tz.name ? tz.name : "unknown",
+         use_custom_server ? ntp_server_pref_.c_str() : "default");
     sntp_set_sync_status(SNTP_SYNC_STATUS_RESET);
-    configTzTime(posix_tz, "pool.ntp.org", "time.nist.gov", "time.google.com");
+    if (use_custom_server) {
+        configTzTime(posix_tz, ntp_server_pref_.c_str(), nullptr, nullptr);
+    } else {
+        configTzTime(posix_tz, "pool.ntp.org", "time.nist.gov", "time.google.com");
+    }
     return true;
 }
 

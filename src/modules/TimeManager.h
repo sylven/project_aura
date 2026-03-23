@@ -30,6 +30,8 @@ public:
 
     bool setNtpEnabledPref(bool enabled);
     bool isNtpEnabledPref() const { return ntp_enabled_pref_; }
+    bool setNtpServerPref(const String &server);
+    const String &ntpServerPref() const { return ntp_server_pref_; }
     bool isNtpEnabled() const { return ntp_enabled_; }
     bool isNtpSyncing() const { return ntp_syncing_; }
     bool isNtpError() const { return ntp_err_; }
@@ -108,6 +110,7 @@ private:
     bool rtc_probe_needs_pcf_verification_ = false;
 
     bool ntp_enabled_pref_ = true;
+    String ntp_server_pref_;
     bool ntp_enabled_ = true;
     bool ntp_syncing_ = false;
     bool ntp_err_ = false;
