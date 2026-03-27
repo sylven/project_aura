@@ -31,6 +31,7 @@ constexpr uint32_t kMqttMdnsSuccessCacheMs = 5UL * 60UL * 1000UL;
 constexpr uint32_t kMqttMdnsFailureCacheMs = 60UL * 1000UL;
 constexpr int kMqttConnectTimeoutShortMs = 3000;
 constexpr int kMqttConnectTimeoutSlowMs = 3000;
+constexpr uint16_t kMqttKeepaliveSeconds = 120;
 constexpr uint8_t kMqttLongRetryLogEveryAttempts = 6;
 constexpr size_t kMaxQueuedEventPublishesPerPoll = 4;
 constexpr const char *kFanTimerOptions[] = {
@@ -398,7 +399,7 @@ bool MqttManager::connectTransport(const char *client_id, const char *will_topic
     config.session.last_will.msg_len = static_cast<int>(strlen(Config::MQTT_AVAIL_OFFLINE));
     config.session.last_will.qos = 0;
     config.session.last_will.retain = 1;
-    config.session.keepalive = 30;
+    config.session.keepalive = kMqttKeepaliveSeconds;
     config.network.timeout_ms = connect_timeout_ms_for_attempts(mqtt_connect_attempts_);
     config.network.disable_auto_reconnect = true;
     config.buffer.size = Config::MQTT_BUFFER_SIZE;
