@@ -50,6 +50,13 @@ function Resolve-BuildId {
   }
 }
 
+function Test-IsStableVersion {
+  param([string]$Value)
+
+  return -not [string]::IsNullOrWhiteSpace($Value) -and
+         $Value -match '^\d+(?:\.\d+)+$'
+}
+
 if (-not $Tag) {
   $Tag = "v$Version"
 }
@@ -60,7 +67,7 @@ if (-not $Title) {
 $root = Resolve-Path (Join-Path $PSScriptRoot "..")
 $resolvedBuildId = Resolve-BuildId -Root $root
 $displayVersion = $Version
-if ($resolvedBuildId) {
+if ($resolvedBuildId -and -not (Test-IsStableVersion -Value $Version)) {
   $displayVersion = "{0}-{1}" -f $Version, $resolvedBuildId
 }
 if (-not $AssetsDir) {

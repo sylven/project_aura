@@ -67,6 +67,13 @@ function Resolve-BuildId {
   }
 }
 
+function Test-IsStableVersion {
+  param([string]$Value)
+
+  return -not [string]::IsNullOrWhiteSpace($Value) -and
+         $Value -match '^\d+(?:\.\d+)+$'
+}
+
 function Get-PartitionOffset {
   param(
     [string]$CsvPath,
@@ -106,7 +113,7 @@ if (-not $Version) {
 
 $resolvedBuildId = Resolve-BuildId -Root $root
 $displayVersion = $Version
-if ($resolvedBuildId) {
+if ($resolvedBuildId -and -not (Test-IsStableVersion -Value $Version)) {
   $displayVersion = "{0}-{1}" -f $Version, $resolvedBuildId
 }
 
