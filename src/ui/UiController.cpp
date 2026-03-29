@@ -1083,11 +1083,13 @@ void UiController::webSetFirmwareUpdateScreen(bool active) {
 
     if (active) {
         int restore_screen = current_screen_id;
-        if (pending_screen_id > 0 && pending_screen_id != SCREEN_ID_PAGE_FW_UPDATE) {
+        if (!is_restore_target(restore_screen) &&
+            pending_screen_id > 0 &&
+            pending_screen_id != SCREEN_ID_PAGE_FW_UPDATE) {
             restore_screen = pending_screen_id;
         }
         if (!is_restore_target(restore_screen)) {
-            restore_screen = SCREEN_ID_PAGE_SETTINGS;
+            restore_screen = SCREEN_ID_PAGE_MAIN_PRO;
         }
         firmware_update_return_screen_id_ = restore_screen;
         firmware_update_screen_active_ = true;
@@ -1109,7 +1111,7 @@ void UiController::webSetFirmwareUpdateScreen(bool active) {
 
     int restore_screen = firmware_update_return_screen_id_;
     if (!is_restore_target(restore_screen)) {
-        restore_screen = SCREEN_ID_PAGE_SETTINGS;
+        restore_screen = SCREEN_ID_PAGE_MAIN_PRO;
     }
     pending_screen_id = restore_screen;
     apply_pending_screen_now_from_web();
