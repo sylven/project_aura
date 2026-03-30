@@ -40,6 +40,7 @@ constexpr uint32_t kWifiStaTransitionPollMs = 10UL;
 constexpr uint32_t kWifiStaStartSettleMs = 150UL;
 constexpr uint32_t kWifiColdBootWarmupMs = 2500UL;
 constexpr uint8_t kWifiColdBootSoftConnectAttempts = 3;
+constexpr uint32_t kWifiRecoveryRetryDelayMs = 30000UL;
 constexpr wifi_ps_type_t kWifiStaDefaultPowerSaveMode = WIFI_PS_NONE;
 
 bool is_retryable_connect_reason(wifi_err_reason_t reason) {
@@ -482,10 +483,12 @@ void AuraNetworkManager::scheduleStaRetry(const char *log_reason, bool warn) {
                     static_cast<unsigned>(Config::WIFI_CONNECT_MAX_RETRIES));
     } else {
         Logger::log(warn ? Logger::Warn : Logger::Info, "WiFi",
-                    "%s, enter error state",
-                    (log_reason && log_reason[0] != '\0') ? log_reason : "connect failed");
+                    "%s, enter error state; background retry in %u seconds",
+                    (log_reason && log_reason[0] != '\0') ? log_reason : "connect failed",
+                    static_cast<unsigned>(kWifiRecoveryRetryDelayMs / 1000UL));
         wifi_state_ = WIFI_STATE_OFF;
-        wifi_retry_at_ms_ = 0;
+        wifi_retry_count_ = Config::WIFI_CONNECT_MAX_RETRIES;
+        wifi_retry_at_ms_ = millis() + kWifiRecoveryRetryDelayMs;
         wifi_ui_dirty_ = true;
     }
 }
