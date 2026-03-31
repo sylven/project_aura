@@ -1653,6 +1653,13 @@ lv_color_t UiController::night_alert_color(lv_color_t color) {
     if (color.full == color_red().full) {
         return color_red();
     }
+    // Keep warning levels faint but still distinguishable at night.
+    if (color.full == color_orange().full) {
+        return lv_color_mix(color_orange(), color_inactive(), 72);
+    }
+    if (color.full == color_yellow().full) {
+        return lv_color_mix(color_yellow(), color_inactive(), 46);
+    }
     return color_inactive();
 }
 
@@ -2117,34 +2124,30 @@ void UiController::update_hum_offset_label() {
 
 void UiController::update_led_indicators() {
     const bool visible = led_indicators_enabled;
-    if (objects.dot_co2_1) visible ? lv_obj_clear_flag(objects.dot_co2_1, LV_OBJ_FLAG_HIDDEN)
-                                   : lv_obj_add_flag(objects.dot_co2_1, LV_OBJ_FLAG_HIDDEN);
-    if (objects.dot_temp_1) visible ? lv_obj_clear_flag(objects.dot_temp_1, LV_OBJ_FLAG_HIDDEN)
-                                    : lv_obj_add_flag(objects.dot_temp_1, LV_OBJ_FLAG_HIDDEN);
-    if (objects.dot_hum_1) visible ? lv_obj_clear_flag(objects.dot_hum_1, LV_OBJ_FLAG_HIDDEN)
-                                   : lv_obj_add_flag(objects.dot_hum_1, LV_OBJ_FLAG_HIDDEN);
-    if (objects.dot_dp_1) visible ? lv_obj_clear_flag(objects.dot_dp_1, LV_OBJ_FLAG_HIDDEN)
-                                  : lv_obj_add_flag(objects.dot_dp_1, LV_OBJ_FLAG_HIDDEN);
-    if (objects.dot_ah_1) visible ? lv_obj_clear_flag(objects.dot_ah_1, LV_OBJ_FLAG_HIDDEN)
-                                  : lv_obj_add_flag(objects.dot_ah_1, LV_OBJ_FLAG_HIDDEN);
-    if (objects.dot_pm25_1) visible ? lv_obj_clear_flag(objects.dot_pm25_1, LV_OBJ_FLAG_HIDDEN)
-                                    : lv_obj_add_flag(objects.dot_pm25_1, LV_OBJ_FLAG_HIDDEN);
-    if (objects.dot_pm05) visible ? lv_obj_clear_flag(objects.dot_pm05, LV_OBJ_FLAG_HIDDEN)
-                                  : lv_obj_add_flag(objects.dot_pm05, LV_OBJ_FLAG_HIDDEN);
-    if (objects.dot_pm10_pro) visible ? lv_obj_clear_flag(objects.dot_pm10_pro, LV_OBJ_FLAG_HIDDEN)
-                                      : lv_obj_add_flag(objects.dot_pm10_pro, LV_OBJ_FLAG_HIDDEN);
-    if (objects.dot_pm1) visible ? lv_obj_clear_flag(objects.dot_pm1, LV_OBJ_FLAG_HIDDEN)
-                                 : lv_obj_add_flag(objects.dot_pm1, LV_OBJ_FLAG_HIDDEN);
-    if (objects.dot_voc_1) visible ? lv_obj_clear_flag(objects.dot_voc_1, LV_OBJ_FLAG_HIDDEN)
-                                   : lv_obj_add_flag(objects.dot_voc_1, LV_OBJ_FLAG_HIDDEN);
-    if (objects.dot_nox_1) visible ? lv_obj_clear_flag(objects.dot_nox_1, LV_OBJ_FLAG_HIDDEN)
-                                   : lv_obj_add_flag(objects.dot_nox_1, LV_OBJ_FLAG_HIDDEN);
-    if (objects.dot_hcho_1) visible ? lv_obj_clear_flag(objects.dot_hcho_1, LV_OBJ_FLAG_HIDDEN)
-                                    : lv_obj_add_flag(objects.dot_hcho_1, LV_OBJ_FLAG_HIDDEN);
-    if (objects.dot_co) visible ? lv_obj_clear_flag(objects.dot_co, LV_OBJ_FLAG_HIDDEN)
-                                : lv_obj_add_flag(objects.dot_co, LV_OBJ_FLAG_HIDDEN);
-    if (objects.dot_mr) visible ? lv_obj_clear_flag(objects.dot_mr, LV_OBJ_FLAG_HIDDEN)
-                                : lv_obj_add_flag(objects.dot_mr, LV_OBJ_FLAG_HIDDEN);
+    auto set_indicator_visible = [visible](lv_obj_t *obj) {
+        if (!obj) {
+            return;
+        }
+        visible ? lv_obj_clear_flag(obj, LV_OBJ_FLAG_HIDDEN)
+                : lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
+    };
+
+    set_indicator_visible(objects.dot_co2_1);
+    set_indicator_visible(objects.co2_marker_1);
+    set_indicator_visible(objects.dot_temp_1);
+    set_indicator_visible(objects.dot_hum_1);
+    set_indicator_visible(objects.dot_dp_1);
+    set_indicator_visible(objects.dot_ah_1);
+    set_indicator_visible(objects.dot_pm25_1);
+    set_indicator_visible(objects.dot_pm05);
+    set_indicator_visible(objects.dot_pm10_pro);
+    set_indicator_visible(objects.dot_pm1);
+    set_indicator_visible(objects.dot_voc_1);
+    set_indicator_visible(objects.dot_nox_1);
+    set_indicator_visible(objects.dot_hcho_1);
+    set_indicator_visible(objects.dot_co);
+    set_indicator_visible(objects.dot_mr);
+    set_indicator_visible(objects.dot_sensor_info);
 }
 
 void UiController::set_chip_color(lv_obj_t *obj, lv_color_t color) {

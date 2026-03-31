@@ -81,7 +81,7 @@ void UiController::update_sensor_info_ui() {
             }
             lv_color_t voc_col = gas_warmup ? color_blue()
                                             : (currentData.voc_valid ? getVOCColor(currentData.voc_index) : color_inactive());
-            set_dot_color(objects.dot_sensor_info, gas_warmup ? voc_col : alert_color_for_mode(voc_col));
+            set_dot_color(objects.dot_sensor_info, alert_color_for_mode(voc_col));
             set_voc_info_mode(voc_graph_mode_);
             if (voc_graph_mode_ &&
                 should_refresh_active_graph(INFO_VOC, voc_graph_range_, voc_graph_points())) {
@@ -102,7 +102,7 @@ void UiController::update_sensor_info_ui() {
             }
             lv_color_t nox_col = gas_warmup ? color_blue()
                                             : (currentData.nox_valid ? getNOxColor(currentData.nox_index) : color_inactive());
-            set_dot_color(objects.dot_sensor_info, gas_warmup ? nox_col : alert_color_for_mode(nox_col));
+            set_dot_color(objects.dot_sensor_info, alert_color_for_mode(nox_col));
             set_nox_info_mode(nox_graph_mode_);
             if (nox_graph_mode_ &&
                 should_refresh_active_graph(INFO_NOX, nox_graph_range_, nox_graph_points())) {
@@ -133,8 +133,7 @@ void UiController::update_sensor_info_ui() {
             safe_label_set_text(objects.label_sensor_info_unit, unit);
             lv_color_t hcho_col = hcho_warmup ? color_blue()
                                               : getHCHOColor(currentData.hcho, currentData.hcho_valid);
-            set_dot_color(objects.dot_sensor_info,
-                          hcho_warmup ? hcho_col : alert_color_for_mode(hcho_col));
+            set_dot_color(objects.dot_sensor_info, alert_color_for_mode(hcho_col));
             set_hcho_info_mode(hcho_graph_mode_);
             if (hcho_graph_mode_ &&
                 should_refresh_active_graph(INFO_HCHO, hcho_graph_range_, hcho_graph_points())) {

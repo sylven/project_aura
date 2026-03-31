@@ -27,8 +27,8 @@ lv_color_t themeColorFromU32(uint32_t value) {
 ThemeManager::ThemeManager() {
     night_.screen_bg = lv_color_hex(0x000000);
     night_.card_bg = lv_color_hex(0x000000);
-    night_.card_border = lv_color_hex(0x3f3f3f);
-    night_.text_primary = lv_color_hex(0x8f8f8f);
+    night_.card_border = lv_color_hex(0x2e2e2e);
+    night_.text_primary = lv_color_hex(0x686868);
     night_.shadow_color = night_.card_border;
     night_.shadow_enabled = true;
     night_.gradient_enabled = false;

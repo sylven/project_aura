@@ -224,7 +224,7 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
     const bool show_pm1_in_pm10_card = co_sensor_present;
     set_visible(objects.label_pm1_title, show_pm1_in_pm10_card);
     set_visible(objects.label_pm1_value, show_pm1_in_pm10_card);
-    set_visible(objects.dot_pm1, show_pm1_in_pm10_card);
+    set_visible(objects.dot_pm1, show_pm1_in_pm10_card && led_indicators_enabled);
     set_visible(objects.label_pm10_unit, !show_pm1_in_pm10_card);
 
     if (show_pm1_in_pm10_card && objects.label_pm1_value) {
@@ -264,7 +264,7 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
     }
     lv_color_t voc_col = gas_warmup ? color_blue()
                                     : (currentData.voc_valid ? getVOCColor(currentData.voc_index) : color_inactive());
-    set_dot_color(objects.dot_voc_1, gas_warmup ? voc_col : alert_color_for_mode(voc_col));
+    set_dot_color(objects.dot_voc_1, alert_color_for_mode(voc_col));
 
     if (currentData.nox_valid) {
         snprintf(buf, sizeof(buf), "%d", currentData.nox_index);
@@ -286,7 +286,7 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
     }
     lv_color_t nox_col = gas_warmup ? color_blue()
                                     : (currentData.nox_valid ? getNOxColor(currentData.nox_index) : color_inactive());
-    set_dot_color(objects.dot_nox_1, gas_warmup ? nox_col : alert_color_for_mode(nox_col));
+    set_dot_color(objects.dot_nox_1, alert_color_for_mode(nox_col));
 
     const bool hcho_warmup = sensorManager.isSfaWarmupActive();
     const bool hcho_available = currentData.hcho_valid;
@@ -315,8 +315,7 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
     if (objects.dot_hcho_1) {
         lv_color_t hcho_col = hcho_available ? getHCHOColor(currentData.hcho, true)
                                              : (hcho_warmup ? color_blue() : aq.color);
-        set_dot_color(objects.dot_hcho_1,
-                      hcho_warmup ? hcho_col : alert_color_for_mode(hcho_col));
+        set_dot_color(objects.dot_hcho_1, alert_color_for_mode(hcho_col));
     }
 
     const bool co_warmup = co_sensor_present && currentData.co_warmup;
@@ -377,7 +376,7 @@ void UiController::update_sensor_cards(const AirQuality &aq, bool gas_warmup, bo
         } else if (pm1_available) {
             co_card_col = getPM1Color(currentData.pm1);
         }
-        set_dot_color(objects.dot_co, co_warmup ? co_card_col : alert_color_for_mode(co_card_col));
+        set_dot_color(objects.dot_co, alert_color_for_mode(co_card_col));
     }
 
     // PRO divider lines follow active theme border color, no shadow.
